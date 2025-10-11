@@ -3,45 +3,69 @@ package com.example.swipy
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.swipy.ui.theme.SwipyTheme
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import com.example.swipy.repositories.FakeAuthRepository
+import com.example.swipy.ui.HomeScreen
+import com.example.swipy.viewModels.AuthViewModel
+import com.example.swipy.ui.LoginScreen
+import com.example.swipy.ui.RegisterScreen
+import com.example.swipy.ui.LandingScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        val vm = AuthViewModel(FakeAuthRepository())
+
         setContent {
-            SwipyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            MaterialTheme {
+                var showLanding by remember { mutableStateOf(true) }
+                var showRegister by remember { mutableStateOf(false) }
+                var userId by remember { mutableStateOf<String?>(null) }
+
+                when {
+                    userId != null -> {
+                        HomeScreen(userLabel = userId!!,
+                            onLogoutClick = {
+                                vm.logout()
+                                userId = null
+                                showLanding = true
+                                showRegister = false
+                            },
+                        onBrowseClick = { /* TODO: remplace par ton BrowseScreen */ }
+                        )
+                    }
+
+                    showLanding -> {
+                        LandingScreen(
+                            onLoginClick = {
+                                showLanding = false
+                                showRegister = false
+                            },
+                            onRegisterClick = {
+                                showLanding = false
+                                showRegister = true
+                            }
+                        )
+                    }
+
+                    showRegister -> {
+                        RegisterScreen(
+                            vm = vm,
+                            onGoLogin = { showRegister = false },
+                            onRegistered = { id -> userId = id }
+                        )
+                    }
+
+                    else -> {
+                        LoginScreen(
+                            vm = vm,
+                            onGoRegister = { showRegister = true },
+                            onLoggedIn = { id -> userId = id }
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SwipyTheme {
-        Greeting("Android")
     }
 }
