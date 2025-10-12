@@ -1,7 +1,7 @@
 package com.example.swipy.models
 
 data class Credentials(val email: String = "", val password: String = "")
-data class RegisterData(val email: String = "", val password: String = "", val confirm: String = "")
+data class RegisterData(val email: String = "", val password: String = "", val firstname: String = "", val lastname: String = "", val confirm: String = "")
 
 sealed interface AuthResult {
     data object Loading : AuthResult
@@ -10,6 +10,10 @@ sealed interface AuthResult {
 }
 
 object Validators {
-    fun email(e: String) = e.contains("@") && e.contains(".")
-    fun password(p: String) = p.length >= 8
+    fun email(e: String): Boolean {
+        return e.contains("@") && e.contains(".")
+    }
+    fun password(p: String): Boolean {
+        return p.length >= 8
+    }
 }

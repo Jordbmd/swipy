@@ -11,6 +11,7 @@ import com.example.swipy.viewModels.AuthViewModel
 import com.example.swipy.ui.LoginScreen
 import com.example.swipy.ui.RegisterScreen
 import com.example.swipy.ui.LandingScreen
+import com.example.swipy.models.User
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,18 +22,18 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 var showLanding by remember { mutableStateOf(true) }
                 var showRegister by remember { mutableStateOf(false) }
-                var userId by remember { mutableStateOf<String?>(null) }
+                var user by remember { mutableStateOf<User?>(null) }
 
                 when {
-                    userId != null -> {
-                        HomeScreen(userLabel = userId!!,
+                    user != null -> {
+                        HomeScreen(userLabel = user!!.firstName,
                             onLogoutClick = {
                                 vm.logout()
-                                userId = null
+                                user = null
                                 showLanding = true
                                 showRegister = false
                             },
-                        onBrowseClick = { /* TODO: remplace par ton BrowseScreen */ }
+                        onBrowseClick = { /* TODO BrowseScreen */ }
                         )
                     }
 
@@ -53,7 +54,7 @@ class MainActivity : ComponentActivity() {
                         RegisterScreen(
                             vm = vm,
                             onGoLogin = { showRegister = false },
-                            onRegistered = { id -> userId = id }
+                            onRegistered = { u-> user = u }
                         )
                     }
 
@@ -61,7 +62,7 @@ class MainActivity : ComponentActivity() {
                         LoginScreen(
                             vm = vm,
                             onGoRegister = { showRegister = true },
-                            onLoggedIn = { id -> userId = id }
+                            onLoggedIn = { u -> user = u }
                         )
                     }
                 }

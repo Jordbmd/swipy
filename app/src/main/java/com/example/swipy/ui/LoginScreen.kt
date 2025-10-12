@@ -8,17 +8,22 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.swipy.models.Credentials
 import com.example.swipy.viewModels.AuthViewModel
+import com.example.swipy.models.User
 
 @Composable
 fun LoginScreen(
     vm: AuthViewModel,
     onGoRegister: () -> Unit,
-    onLoggedIn: (String) -> Unit
+    onLoggedIn: (User) -> Unit
 ) {
     val state by vm.state.collectAsState()
 
-    LaunchedEffect(state.loggedInUserId) {
-        state.loggedInUserId?.let(onLoggedIn)
+    LaunchedEffect(state.loggedInUser) {
+        val user = state.loggedInUser
+        if (user != null) {
+            onLoggedIn(user)
+        }
+
     }
 
     var email by remember { mutableStateOf("") }
