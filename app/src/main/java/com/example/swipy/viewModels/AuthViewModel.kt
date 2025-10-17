@@ -19,6 +19,7 @@ data class AuthUiState(
 )
 
 class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
+
     private val _state = MutableStateFlow(AuthUiState(loggedInUser = repo.currentUserOrNull()))
     val state: StateFlow<AuthUiState> = _state
 
@@ -29,9 +30,11 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
         if (!Validators.password(creds.password)) {
             return setError("8 caractères minimum")
         }
+
         viewModelScope.launch {
-           _state.update { it.copy(isLoading = true, error = null) }
+            _state.update { it.copy(isLoading = true, error = null) }
             val res = repo.login(creds.email, creds.password)
+
             if (res.isSuccess) {
                 val user = res.getOrNull()
                 _state.update { it.copy(isLoading = false, loggedInUser = user) }
@@ -52,22 +55,39 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
         if (data.password != data.confirm) {
             return setError("Les mots de passe ne correspondent pas")
         }
+
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            val res = repo.register(data.email, data.password, data.firstname, data.lastname)
+
+            val res = repo.register(
+                email = data.email,
+                password = data.password,
+                firstname = data.firstname,
+                lastname = data.lastname,
+                age = data.age,
+                gender = data.gender,
+                bio = if (data.bio.isNotBlank()) data.bio else null,
+                city = if (data.city.isNotBlank()) data.city else null,
+                country = if (data.country.isNotBlank()) data.country else null,
+                photos = data.photos
+            )
+
             if (res.isSuccess) {
                 val user = res.getOrNull()
                 _state.update { it.copy(isLoading = false, loggedInUser = user) }
-            }
-            else {
+            } else {
                 val msg = res.exceptionOrNull()?.message ?: "Erreur inconnue"
                 _state.update { it.copy(isLoading = false, error = msg) }
-
             }
         }
     }
 
-    fun logout() = viewModelScope.launch { repo.logout(); _state.update { AuthUiState() } }
-    fun clearError() = _state.update { it.copy(error = null) }
-    private fun setError(msg: String) { _state.update { it.copy(error = msg) } }
+    fun logout() = viewModelScope.launch {
+        repo.logout()
+        _state.update { AuthUiState() }
+    }
+
+    private fun setError(msg: String) {
+        _state.update { it.copy(error = msg) }
+    }
 }
