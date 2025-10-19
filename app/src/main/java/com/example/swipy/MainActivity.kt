@@ -12,32 +12,39 @@ import com.example.swipy.ui.RegisterScreen
 import com.example.swipy.ui.LandingScreen
 import com.example.swipy.models.User
 import com.example.swipy.repositories.LocalAuthRepository
+import com.example.swipy.repositories.UserRepository
+import com.example.swipy.viewModels.SwipeViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val vm = AuthViewModel(LocalAuthRepository(applicationContext))
+        val userRepo = UserRepository(applicationContext)
 
         setContent {
             MaterialTheme {
                 var showLanding by remember { mutableStateOf(true) }
                 var showRegister by remember { mutableStateOf(false) }
                 var user by remember { mutableStateOf<User?>(null) }
+                
+                // Swipe quand on a un user
+                val swipeViewModel = user?.let { 
+                    remember(it.id) { SwipeViewModel(userRepo, it.id) }
+                }
 
                 when {
-                    user != null -> {
+                    user != null && swipeViewModel != null -> {
                         HomeScreen(
                             user = user!!,
+                            swipeViewModel = swipeViewModel,
                             onLogoutClick = {
                                 vm.logout()
                                 user = null
                                 showLanding = true
                                 showRegister = false
-                            },
-                            onBrowseClick = { /* TODO: future BrowseScreen */ }
+                            }
                         )
-
                     }
 
                     showLanding -> {
