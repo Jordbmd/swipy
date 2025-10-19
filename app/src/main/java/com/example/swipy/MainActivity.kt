@@ -28,9 +28,12 @@ class MainActivity : ComponentActivity() {
                 var showRegister by remember { mutableStateOf(false) }
                 var user by remember { mutableStateOf<User?>(null) }
                 
-                // Swipe quand on a un user
-                val swipeViewModel = user?.let { 
-                    remember(it.id) { SwipeViewModel(userRepo, it.id) }
+                // Créer le SwipeViewModel et le garder en mémoire
+                val swipeViewModel = remember(user?.id) {
+                    user?.let { 
+                        android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${it.id}")
+                        SwipeViewModel(userRepo, it.id)
+                    }
                 }
 
                 when {

@@ -32,6 +32,14 @@ fun HomeScreen(
     val swipeState by swipeViewModel.state.collectAsState()
     val currentProfile = swipeViewModel.getCurrentProfile()
 
+    // Debug
+    LaunchedEffect(swipeState, currentProfile) {
+        android.util.Log.d("HomeScreen", "isLoading=${swipeState.isLoading}, " +
+                "profiles=${swipeState.profiles.size}, " +
+                "currentIndex=${swipeState.currentProfileIndex}, " +
+                "currentProfile=${currentProfile?.firstname ?: "null"}")
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
