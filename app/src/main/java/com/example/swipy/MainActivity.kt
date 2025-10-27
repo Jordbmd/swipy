@@ -18,12 +18,10 @@ import com.example.swipy.models.User
 import com.example.swipy.repositories.LocalAuthRepository
 import com.example.swipy.repositories.UserRepository
 import com.example.swipy.viewModels.SwipeViewModel
-import com.example.swipy.data.DatabaseSeeder
-import kotlinx.coroutines.launch
-import androidx.lifecycle.lifecycleScope
 import com.example.swipy.viewModels.ProfileViewModel
 import com.example.swipy.data.local.SeedManager
 import kotlinx.coroutines.launch
+import com.example.swipy.ui.ProfileScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +50,10 @@ class MainActivity : ComponentActivity() {
                         android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${it.id}")
                         SwipeViewModel(userRepo, it.id)
                     }
+                }
+                
+                val profileViewModel = remember {
+                    ProfileViewModel(userRepo)
                 }
                 
                 // Observer les matchs
@@ -103,11 +105,9 @@ class MainActivity : ComponentActivity() {
                             onKeepSwiping = {
                                 showMatchScreen = false
                                 swipeViewModel?.clearMatch()
-                val profileViewModel = remember {
-                    ProfileViewModel(userRepo)
-                }
-
-                when {
+                            }
+                        )
+                    }
                     showProfile && user != null -> {
                         ProfileScreen(
                             user = user!!,

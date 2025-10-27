@@ -28,8 +28,7 @@ fun HomeScreen(
     user: User,
     swipeViewModel: SwipeViewModel,
     onLogoutClick: () -> Unit,
-    onSettingsClick: () -> Unit = {},
-    onMessagesClick: () -> Unit = {}
+    onMessagesClick: () -> Unit = {},
     onProfileClick: () -> Unit
 ) {
     val swipeState by swipeViewModel.state.collectAsState()
@@ -79,19 +78,13 @@ fun HomeScreen(
                         )
                     }
                     
-                    IconButton(onClick = onSettingsClick) {
+                    IconButton(onClick = onProfileClick) {
                         Icon(
-                            Icons.Default.Settings,
-                            contentDescription = "Paramètres",
+                            Icons.Default.Person,
+                            contentDescription = "Profil",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
-                IconButton(onClick = onProfileClick) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Profil",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
                 }
             }
 

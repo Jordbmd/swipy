@@ -142,6 +142,8 @@ class UserRepository(context: Context) {
             }
         
         return matches
+    }
+    
     suspend fun getUserById(userId: Int): User? {
         val entity = userDao.getUserById(userId)
         if (entity == null) return null
