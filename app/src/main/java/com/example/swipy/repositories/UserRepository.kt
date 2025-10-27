@@ -23,7 +23,6 @@ class UserRepository(context: Context) {
     suspend fun getPotentialMatches(currentUserId: Int): List<User> {
         val allUsers = userDao.getAllUsers()
         
-        // IDs des utilisateurs déjà swipés (likes + dislikes)
         val likedIds = swipeDao.getSwipesByAction(currentUserId, "like").map { it.targetUserId }
         val dislikedIds = swipeDao.getSwipesByAction(currentUserId, "dislike").map { it.targetUserId }
         val swipedIds = likedIds + dislikedIds
@@ -75,7 +74,6 @@ class UserRepository(context: Context) {
         swipeDao.insert(swipe)
         Log.d("UserRepository", "Like saved to database")
         
-        // Vérifier si l'autre personne nous a aussi liké
         val reverseSwipe = swipeDao.getLikeSwipe(likedUserId, userId)
         Log.d("UserRepository", "Reverse swipe (${likedUserId} → ${userId}): ${reverseSwipe != null}")
         
@@ -101,11 +99,9 @@ class UserRepository(context: Context) {
     suspend fun getMatches(userId: Int): List<User> {
         Log.d("UserRepository", "=== Getting matches for user $userId ===")
         
-        // Récupérer tous les likes de l'utilisateur
         val userLikes = swipeDao.getSwipesByAction(userId, "like")
         Log.d("UserRepository", "User has liked ${userLikes.size} users")
         
-        // Pour chaque like, vérifier si c'est un match mutuel
         val matchIds = mutableListOf<Int>()
         for (like in userLikes) {
             val reverseSwipe = swipeDao.getLikeSwipe(like.targetUserId, userId)
@@ -117,7 +113,6 @@ class UserRepository(context: Context) {
         
         Log.d("UserRepository", "Total matches: ${matchIds.size}")
         
-        // Récupérer les informations complètes des matchs
         val allUsers = userDao.getAllUsers()
         val matches = allUsers
             .filter { it.id in matchIds }

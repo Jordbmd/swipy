@@ -69,7 +69,6 @@ fun MatchScreen(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             
-            // Titre animé
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn() + slideInVertically()
@@ -90,14 +89,12 @@ fun MatchScreen(
                 }
             }
             
-            // Photos qui se chevauchent
             Box(
                 modifier = Modifier
                     .height(400.dp)
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                // Photo de gauche (utilisateur actuel)
                 Box(
                     modifier = Modifier
                         .offset(x = (-60).dp)
@@ -106,7 +103,6 @@ fun MatchScreen(
                     UserPhotoCard(currentUser)
                 }
                 
-                // Photo de droite (match)
                 Box(
                     modifier = Modifier
                         .offset(x = 60.dp)
@@ -116,7 +112,6 @@ fun MatchScreen(
                 }
             }
             
-            // Texte animé
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(
@@ -132,7 +127,6 @@ fun MatchScreen(
                 )
             }
             
-            // Boutons
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(
@@ -214,7 +208,6 @@ private fun UserPhotoCard(user: User) {
                 }
             }
             
-            // Nom en bas
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

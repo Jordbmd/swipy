@@ -56,7 +56,6 @@ class MainActivity : ComponentActivity() {
                     ProfileViewModel(userRepo)
                 }
                 
-                // Observer les matchs
                 LaunchedEffect(swipeViewModel) {
                     swipeViewModel?.state?.collect { state ->
                         if (state.matchedUser != null && !showMatchScreen) {

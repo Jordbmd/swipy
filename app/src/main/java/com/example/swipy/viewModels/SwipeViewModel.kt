@@ -77,7 +77,6 @@ class SwipeViewModel(private val repo: UserRepository, private val currentUserId
             it.copy(currentProfileIndex = it.currentProfileIndex + 1)
         }
         
-        // Recharger si on arrive à la fin
         if (_state.value.currentProfileIndex >= _state.value.profiles.size) {
             loadProfiles()
         }

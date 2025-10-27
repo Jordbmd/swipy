@@ -151,7 +151,6 @@ private fun MatchItem(
                 .background(Color.White),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Photo de profil
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -180,7 +179,6 @@ private fun MatchItem(
                 }
             }
             
-            // Informations
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -214,7 +212,6 @@ private fun MatchItem(
                 }
             }
             
-            // Badge "Nouveau match"
             Box(
                 modifier = Modifier
                     .padding(end = 16.dp)

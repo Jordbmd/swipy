@@ -34,7 +34,6 @@ fun HomeScreen(
     val swipeState by swipeViewModel.state.collectAsState()
     val currentProfile = swipeViewModel.getCurrentProfile()
 
-    // Debug
     LaunchedEffect(swipeState, currentProfile) {
         android.util.Log.d("HomeScreen", "isLoading=${swipeState.isLoading}, " +
                 "profiles=${swipeState.profiles.size}, " +

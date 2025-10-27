@@ -20,7 +20,6 @@ class DatabaseSeeder(private val context: Context) {
     suspend fun seedUsers() = withContext(Dispatchers.IO) {
         val userDao = db.userDao()
         
-        // Vérifier si on a déjà des users
         val existingUsers = userDao.getAllUsers()
         if (existingUsers.size >= 5) {
             android.util.Log.d("DatabaseSeeder", "Database already has ${existingUsers.size} users, skipping seed")
