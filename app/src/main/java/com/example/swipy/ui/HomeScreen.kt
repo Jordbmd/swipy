@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +28,8 @@ fun HomeScreen(
     user: User,
     swipeViewModel: SwipeViewModel,
     onLogoutClick: () -> Unit,
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onMessagesClick: () -> Unit = {}
 ) {
     val swipeState by swipeViewModel.state.collectAsState()
     val currentProfile = swipeViewModel.getCurrentProfile()
@@ -71,12 +73,24 @@ fun HomeScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                IconButton(onClick = onSettingsClick) {
-                    Icon(
-                        Icons.Default.Settings,
-                        contentDescription = "Paramètres",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    IconButton(onClick = onMessagesClick) {
+                        Icon(
+                            Icons.Default.MailOutline,
+                            contentDescription = "Messages",
+                            tint = Color(0xFFFF6B9D)
+                        )
+                    }
+                    
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "Paramètres",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                 }
             }
 
