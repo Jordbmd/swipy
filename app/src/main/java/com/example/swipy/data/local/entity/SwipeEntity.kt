@@ -1,4 +1,4 @@
-package com.example.swipy.data.local
+package com.example.swipy.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -11,3 +11,4 @@ data class SwipeEntity(
     val action: String,
     val timestamp: Long = System.currentTimeMillis()
 )
+

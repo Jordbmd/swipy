@@ -1,4 +1,4 @@
-package com.example.swipy.data.local
+package com.example.swipy.data.local.util
 
 import androidx.room.TypeConverter
 
@@ -10,6 +10,7 @@ class Converters {
 
     @TypeConverter
     fun toList(data: String?): List<String>? {
-        return data?.split(",")
+        return data?.split(",")?.filter { it.isNotEmpty() }
     }
 }
+

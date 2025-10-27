@@ -1,6 +1,7 @@
-package com.example.swipy.data.local
+package com.example.swipy.data.local.dao
 
 import androidx.room.*
+import com.example.swipy.data.local.entity.UserEntity
 
 @Dao
 interface UserDao {
@@ -29,3 +30,4 @@ interface UserDao {
     @Query("SELECT COUNT(*) FROM users")
     suspend fun getUserCount(): Int
 }
+

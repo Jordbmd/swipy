@@ -3,7 +3,7 @@ package com.example.swipy.repositories
 import androidx.room.Room
 import android.content.Context
 import com.example.swipy.data.local.AppDatabase
-import com.example.swipy.data.local.UserEntity
+import com.example.swipy.data.local.entity.UserEntity
 import com.example.swipy.models.User
 
 class LocalAuthRepository(context: Context) : AuthRepository {

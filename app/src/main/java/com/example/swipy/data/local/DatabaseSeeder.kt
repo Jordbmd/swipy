@@ -3,6 +3,7 @@ package com.example.swipy.data.local
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
+import com.example.swipy.data.local.entity.UserEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

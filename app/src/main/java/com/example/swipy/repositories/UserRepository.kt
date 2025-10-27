@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.room.Room
 import com.example.swipy.data.local.AppDatabase
-import com.example.swipy.data.local.SwipeEntity
+import com.example.swipy.data.local.entity.SwipeEntity
 import com.example.swipy.models.User
 
 class UserRepository(context: Context) {
