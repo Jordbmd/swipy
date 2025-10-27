@@ -142,6 +142,61 @@ class UserRepository(context: Context) {
             }
         
         return matches
+    suspend fun getUserById(userId: Int): User? {
+        val entity = userDao.getUserById(userId)
+        if (entity == null) return null
+        
+        return User(
+            id = entity.id,
+            email = entity.email,
+            password = entity.password,
+            firstname = entity.firstname,
+            lastname = entity.lastname,
+            age = entity.age,
+            gender = entity.gender,
+            bio = entity.bio,
+            city = entity.city,
+            country = entity.country,
+            latitude = entity.latitude,
+            longitude = entity.longitude,
+            maxDistance = entity.maxDistance,
+            preferredGender = entity.preferredGender,
+            photos = entity.photos ?: emptyList()
+        )
+    }
+
+    suspend fun updateUser(
+        userId: Int,
+        firstname: String,
+        lastname: String,
+        age: Int,
+        bio: String,
+        city: String,
+        country: String,
+        maxDistance: Int,
+        photos: List<String>
+    ): User? {
+        val existingUser = userDao.getUserById(userId)
+        if (existingUser == null) {
+            Log.e("UserRepository", "User $userId not found")
+            return null
+        }
+        
+        val updatedUser = existingUser.copy(
+            firstname = firstname,
+            lastname = lastname,
+            age = age,
+            bio = bio,
+            city = city,
+            country = country,
+            maxDistance = maxDistance,
+            photos = photos
+        )
+        
+        userDao.update(updatedUser)
+        Log.d("UserRepository", "User $userId updated")
+        
+        return getUserById(userId)
     }
 }
 

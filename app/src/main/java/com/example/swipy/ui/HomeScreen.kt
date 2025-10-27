@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.*
@@ -30,6 +30,7 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
     onMessagesClick: () -> Unit = {}
+    onProfileClick: () -> Unit
 ) {
     val swipeState by swipeViewModel.state.collectAsState()
     val currentProfile = swipeViewModel.getCurrentProfile()
@@ -58,13 +59,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onLogoutClick) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Déconnexion",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
+                Spacer(modifier = Modifier.width(48.dp))
 
                 Text(
                     text = "swipy",
@@ -91,6 +86,12 @@ fun HomeScreen(
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "Profil",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                 }
             }
 

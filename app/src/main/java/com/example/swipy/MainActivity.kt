@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.lifecycleScope
 import com.example.swipy.ui.HomeScreen
 import com.example.swipy.ui.MatchScreen
 import com.example.swipy.ui.MessagesScreen
@@ -20,6 +21,9 @@ import com.example.swipy.viewModels.SwipeViewModel
 import com.example.swipy.data.DatabaseSeeder
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
+import com.example.swipy.viewModels.ProfileViewModel
+import com.example.swipy.data.local.SeedManager
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,22 +32,21 @@ class MainActivity : ComponentActivity() {
         val vm = AuthViewModel(LocalAuthRepository(applicationContext))
         val userRepo = UserRepository(applicationContext)
         
-        // Seed la base de données avec des utilisateurs de test
         lifecycleScope.launch {
-            DatabaseSeeder(applicationContext).seedUsers()
+            SeedManager.initialize(applicationContext)
         }
 
         setContent {
             MaterialTheme {
                 var showLanding by remember { mutableStateOf(true) }
                 var showRegister by remember { mutableStateOf(false) }
+                var showProfile by remember { mutableStateOf(false) }
                 var user by remember { mutableStateOf<User?>(null) }
                 var showMatchScreen by remember { mutableStateOf(false) }
                 var showMessagesScreen by remember { mutableStateOf(false) }
                 var showMatchesListScreen by remember { mutableStateOf(false) }
                 var matchedUser by remember { mutableStateOf<User?>(null) }
                 
-                // Créer le SwipeViewModel et le garder en mémoire
                 val swipeViewModel = remember(user?.id) {
                     user?.let { 
                         android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${it.id}")
@@ -100,6 +103,27 @@ class MainActivity : ComponentActivity() {
                             onKeepSwiping = {
                                 showMatchScreen = false
                                 swipeViewModel?.clearMatch()
+                val profileViewModel = remember {
+                    ProfileViewModel(userRepo)
+                }
+
+                when {
+                    showProfile && user != null -> {
+                        ProfileScreen(
+                            user = user!!,
+                            profileViewModel = profileViewModel,
+                            onBackClick = {
+                                showProfile = false
+                            },
+                            onProfileUpdated = { updatedUser ->
+                                user = updatedUser
+                            },
+                            onLogoutClick = {
+                                vm.logout()
+                                user = null
+                                showProfile = false
+                                showLanding = true
+                                showRegister = false
                             }
                         )
                     }
@@ -120,6 +144,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onMessagesClick = {
                                 showMatchesListScreen = true
+                            },
+                            onProfileClick = {
+                                showProfile = true
                             }
                         )
                     }
