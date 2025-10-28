@@ -1,0 +1,101 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "alice@example.com",
+      "firstname": "Alice",
+      "age": 25,
+      "city": "Paris",
+      "bio": "Passionnée de voyages et de photographie",
+      "photos": [
+        "https://randomuser.me/api/portraits/women/1.jpg"
+      ]
+    },
+    {
+      "id": 2,
+      "email": "bob@example.com",
+      "firstname": "Bob",
+      "age": 28,
+      "city": "Lyon",
+      "bio": "Amateur de cuisine et de randonnée",
+      "photos": [
+        "https://randomuser.me/api/portraits/men/1.jpg"
+      ]
+    },
+    {
+      "id": 3,
+      "email": "charlie@example.com",
+      "firstname": "Charlie",
+      "age": 30,
+      "city": "Marseille",
+      "bio": "Développeur passionné par les nouvelles technologies",
+      "photos": [
+        "https://randomuser.me/api/portraits/men/2.jpg"
+      ]
+    },
+    {
+      "id": 4,
+      "email": "diane@example.com",
+      "firstname": "Diane",
+      "age": 26,
+      "city": "Bordeaux",
+      "bio": "Artiste et designer graphique",
+      "photos": [
+        "https://randomuser.me/api/portraits/women/2.jpg"
+      ]
+    },
+    {
+      "id": 5,
+      "email": "emma@example.com",
+      "firstname": "Emma",
+      "age": 24,
+      "city": "Toulouse",
+      "bio": "Étudiante en marketing digital",
+      "photos": [
+        "https://randomuser.me/api/portraits/women/3.jpg"
+      ]
+    },
+    {
+      "id": 6,
+      "email": "felix@example.com",
+      "firstname": "Felix",
+      "age": 29,
+      "city": "Nice",
+      "bio": "Musicien et professeur de guitare",
+      "photos": [
+        "https://randomuser.me/api/portraits/men/3.jpg"
+      ]
+    }
+  ],
+  "swipes": [
+    {
+      "id": 1,
+      "userId": 1,
+      "targetUserId": 2,
+      "action": "like",
+      "timestamp": 1640000000000
+    },
+    {
+      "id": 2,
+      "userId": 2,
+      "targetUserId": 1,
+      "action": "like",
+      "timestamp": 1640001000000
+    },
+    {
+      "id": 3,
+      "userId": 1,
+      "targetUserId": 3,
+      "action": "dislike",
+      "timestamp": 1640002000000
+    }
+  ],
+  "matches": [
+    {
+      "id": 1,
+      "user1Id": 1,
+      "user2Id": 2,
+      "createdAt": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
