@@ -12,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -23,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.swipy.models.User
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 @Composable
 fun SwipeCard(
@@ -32,8 +30,8 @@ fun SwipeCard(
     onSwipeRight: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
     val animatableOffsetX = remember { Animatable(0f) }
     val animatableOffsetY = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()

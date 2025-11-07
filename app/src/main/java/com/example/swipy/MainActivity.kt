@@ -15,7 +15,7 @@ import com.example.swipy.ui.LoginScreen
 import com.example.swipy.ui.RegisterScreen
 import com.example.swipy.ui.LandingScreen
 import com.example.swipy.models.User
-import com.example.swipy.repositories.LocalAuthRepository
+import com.example.swipy.repositories.RemoteAuthRepository
 import com.example.swipy.repositories.UserRepository
 import com.example.swipy.viewModels.SwipeViewModel
 import com.example.swipy.viewModels.ProfileViewModel
@@ -27,7 +27,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val vm = AuthViewModel(LocalAuthRepository(applicationContext))
+        val authRepo = RemoteAuthRepository(applicationContext)
+        val vm = AuthViewModel(authRepo)
         val userRepo = UserRepository(applicationContext)
         
         lifecycleScope.launch {
@@ -44,6 +45,13 @@ class MainActivity : ComponentActivity() {
                 var showMessagesScreen by remember { mutableStateOf(false) }
                 var showMatchesListScreen by remember { mutableStateOf(false) }
                 var matchedUser by remember { mutableStateOf<User?>(null) }
+                var isOfflineMode by remember { mutableStateOf(false) }
+                
+                LaunchedEffect(user) {
+                    if (user != null) {
+                        isOfflineMode = authRepo.isOfflineMode()
+                    }
+                }
                 
                 val swipeViewModel = remember(user?.id) {
                     user?.let { 
@@ -68,7 +76,6 @@ class MainActivity : ComponentActivity() {
                 when {
                     showMessagesScreen && user != null && matchedUser != null -> {
                         MessagesScreen(
-                            currentUser = user!!,
                             matchedUser = matchedUser!!,
                             onBack = {
                                 showMessagesScreen = false
@@ -129,24 +136,15 @@ class MainActivity : ComponentActivity() {
                     
                     user != null && swipeViewModel != null -> {
                         HomeScreen(
-                            user = user!!,
                             swipeViewModel = swipeViewModel,
-                            onLogoutClick = {
-                                vm.logout()
-                                user = null
-                                showLanding = true
-                                showRegister = false
-                                showMatchScreen = false
-                                showMessagesScreen = false
-                                showMatchesListScreen = false
-                                matchedUser = null
-                            },
+
                             onMessagesClick = {
                                 showMatchesListScreen = true
                             },
                             onProfileClick = {
                                 showProfile = true
-                            }
+                            },
+                            isOfflineMode = isOfflineMode
                         )
                     }
 

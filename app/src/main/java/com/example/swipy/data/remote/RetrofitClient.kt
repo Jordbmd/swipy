@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     
-    private const val BASE_URL = "https://my-json-server.typicode.com/Jordbmd/swipy"
+    private const val BASE_URL = "https://6900cdc9ff8d792314bb9113.mockapi.io/api/"
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

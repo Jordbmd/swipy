@@ -21,18 +21,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
     private val _state = MutableStateFlow(ProfileUiState())
     val state: StateFlow<ProfileUiState> = _state
 
-    fun loadProfile(userId: Int) {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            val user = repository.getUserById(userId)
-            if (user != null) {
-                _state.update { it.copy(isLoading = false, user = user) }
-            } else {
-                _state.update { it.copy(isLoading = false, errorMessage = "Utilisateur non trouvé") }
-            }
-        }
-    }
-
     fun updateProfile(
         userId: Int,
         firstname: String,

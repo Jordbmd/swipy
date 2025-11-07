@@ -9,14 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +58,7 @@ fun MatchesListScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -81,8 +79,7 @@ fun MatchesListScreen(
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
-                }
-                
+                }    
                 matches.isEmpty() -> {
                     Column(
                         modifier = Modifier
@@ -203,7 +200,7 @@ private fun MatchItem(
                 if (match.bio?.isNotEmpty() == true) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = match.bio ?: "",
+                        text = match.bio,
                         fontSize = 12.sp,
                         color = Color.DarkGray,
                         maxLines = 1,

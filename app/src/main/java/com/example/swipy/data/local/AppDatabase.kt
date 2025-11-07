@@ -9,7 +9,7 @@ import com.example.swipy.data.local.entity.UserEntity
 import com.example.swipy.data.local.entity.SwipeEntity
 import com.example.swipy.data.local.util.Converters
 
-@Database(entities = [UserEntity::class, SwipeEntity::class], version = 4, exportSchema = false)
+@Database(entities = [UserEntity::class, SwipeEntity::class], version = 5, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao

@@ -7,8 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +33,7 @@ fun RegisterScreen(
         if (user != null) onRegistered(user)
     }
 
-    var step by remember { mutableStateOf(0) }
+    var step by remember { mutableIntStateOf(0) }
 
     var firstname by remember { mutableStateOf("") }
     var lastname by remember { mutableStateOf("") }
@@ -204,12 +204,12 @@ fun RegisterScreen(
                 onClick = { if (step > 0) step-- },
                 enabled = step > 0
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Précédent")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Précédent")
             }
 
             if (step < 3) {
                 IconButton(onClick = { step++ }) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "Suivant")
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Suivant")
                 }
             }
         }

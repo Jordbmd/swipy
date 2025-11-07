@@ -66,9 +66,9 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
                 lastname = data.lastname,
                 age = data.age,
                 gender = data.gender,
-                bio = if (data.bio.isNotBlank()) data.bio else null,
-                city = if (data.city.isNotBlank()) data.city else null,
-                country = if (data.country.isNotBlank()) data.country else null,
+                bio = data.bio.ifBlank { null },
+                city = data.city.ifBlank { null },
+                country = data.country.ifBlank { null },
                 photos = data.photos
             )
 

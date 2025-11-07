@@ -20,6 +20,6 @@ interface AuthRepository {
 
     suspend fun logout()
 
-    fun currentUserIdOrNull(): String?
-    fun currentUserOrNull(): User?
+    suspend fun currentUserIdOrNull(): String?
+    suspend fun currentUserOrNull(): User?
 }

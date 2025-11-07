@@ -1,5 +1,6 @@
 package com.example.swipy.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +26,7 @@ import coil.compose.AsyncImage
 import com.example.swipy.models.User
 import com.example.swipy.viewModels.ProfileViewModel
 
+@SuppressLint("MutableCollectionMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -43,7 +46,7 @@ fun ProfileScreen(
     var city by remember { mutableStateOf(user.city ?: "") }
     var country by remember { mutableStateOf(user.country ?: "") }
     var maxDistance by remember { mutableStateOf(user.maxDistance.toString()) }
-    var photos by remember { mutableStateOf(user.photos.toMutableList()) }
+    var photos by remember { mutableStateOf(user.photos.toList()) }
     
     var showAddPhotoDialog by remember { mutableStateOf(false) }
     var newPhotoUrl by remember { mutableStateOf("") }
@@ -69,7 +72,7 @@ fun ProfileScreen(
                 title = { Text("Mon Profil") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
                     }
                 },
                 actions = {
