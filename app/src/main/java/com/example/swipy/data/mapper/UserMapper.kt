@@ -1,12 +1,11 @@
 package com.example.swipy.data.mapper
 
 import com.example.swipy.data.local.entity.UserEntity
-import com.example.swipy.data.remote.UserResponse
-import com.example.swipy.models.User
+import com.example.swipy.data.remote.models.UserDto
+import com.example.swipy.domain.models.User
 
 
-// Convertit UserResponse (API) en UserEntity (BDD)
-fun UserResponse.toEntity(): UserEntity {
+fun UserDto.toEntity(): UserEntity {
     return UserEntity(
         id = this.id.toIntOrNull() ?: 0,
         email = this.email,
@@ -15,11 +14,11 @@ fun UserResponse.toEntity(): UserEntity {
         lastname = this.lastname,
         age = this.age,
         gender = this.gender ?: "other",
-        bio = this.bio,
-        city = this.city,
-        country = this.country,
-        latitude = this.latitude,
-        longitude = this.longitude,
+        bio = this.bio ?: "",
+        city = this.city ?: "",
+        country = this.country ?: "",
+        latitude = this.latitude ?: 0.0,
+        longitude = this.longitude ?: 0.0,
         maxDistance = this.maxDistance ?: 50,
         preferredGender = this.preferredGender ?: "all",
         photos = if (this.photos != null) listOf(this.photos) else emptyList()
@@ -27,7 +26,6 @@ fun UserResponse.toEntity(): UserEntity {
 }
 
 
-//Convertit UserEntity (BDD) en User (UI)
 
 fun UserEntity.toUser(): User {
     return User(

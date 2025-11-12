@@ -9,6 +9,10 @@ interface SwipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(swipe: SwipeEntity)
 
+   
+    @Query("SELECT * FROM swipes WHERE userId = :userId")
+    suspend fun getSwipesByUser(userId: Int): List<SwipeEntity>
+
     @Query("SELECT * FROM swipes WHERE userId = :userId AND `action` = :action")
     suspend fun getSwipesByAction(userId: Int, action: String): List<SwipeEntity>
 
@@ -20,4 +24,13 @@ interface SwipeDao {
 
     @Query("SELECT COUNT(*) FROM swipes WHERE userId = :userId")
     suspend fun getUserSwipeCount(userId: Int): Int
+
+    @Query("SELECT * FROM swipes WHERE userId = :userId AND targetUserId = :targetUserId LIMIT 1")
+    suspend fun getSwipeByUserAndTarget(userId: Int, targetUserId: Int): SwipeEntity?
+
+    @Query("SELECT * FROM swipes WHERE isSynced = 0")
+    suspend fun getUnsyncedSwipes(): List<SwipeEntity>
+
+    @Query("UPDATE swipes SET isSynced = 1 WHERE userId = :userId AND targetUserId = :targetUserId")
+    suspend fun markAsSynced(userId: Int, targetUserId: Int)
 }

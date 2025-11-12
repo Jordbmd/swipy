@@ -3,40 +3,51 @@ package com.example.swipy
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.lifecycleScope
-import com.example.swipy.ui.HomeScreen
-import com.example.swipy.ui.MatchScreen
-import com.example.swipy.ui.MessagesScreen
-import com.example.swipy.ui.MatchesListScreen
-import com.example.swipy.viewModels.AuthViewModel
-import com.example.swipy.ui.LoginScreen
-import com.example.swipy.ui.RegisterScreen
-import com.example.swipy.ui.LandingScreen
-import com.example.swipy.models.User
-import com.example.swipy.repositories.RemoteAuthRepository
-import com.example.swipy.repositories.UserRepository
-import com.example.swipy.viewModels.SwipeViewModel
-import com.example.swipy.viewModels.ProfileViewModel
-import com.example.swipy.data.local.SeedManager
+import com.example.swipy.presentation.ui.HomeScreen
+import com.example.swipy.presentation.ui.MatchScreen
+import com.example.swipy.presentation.ui.MessagesScreen
+import com.example.swipy.presentation.ui.MatchesListScreen
+import com.example.swipy.presentation.viewModels.AuthViewModel
+import com.example.swipy.presentation.ui.LoginScreen
+import com.example.swipy.presentation.ui.RegisterScreen
+import com.example.swipy.presentation.ui.LandingScreen
+import com.example.swipy.domain.models.User
+import com.example.swipy.data.repository.AuthRepositoryImpl
+import com.example.swipy.data.repository.SwipeRepositoryImpl
+import com.example.swipy.presentation.viewModels.SwipeViewModel
+import com.example.swipy.presentation.viewModels.ProfileViewModel
+import com.example.swipy.data.local.datasource.SeedManager
+import com.example.swipy.data.local.datasource.ThemePreferences
+import com.example.swipy.presentation.ui.theme.SwipyTheme
 import kotlinx.coroutines.launch
-import com.example.swipy.ui.ProfileScreen
+import com.example.swipy.presentation.ui.ProfileScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val authRepo = RemoteAuthRepository(applicationContext)
+        val authRepo = AuthRepositoryImpl(applicationContext)
         val vm = AuthViewModel(authRepo)
-        val userRepo = UserRepository(applicationContext)
+        val userRepo = SwipeRepositoryImpl(applicationContext)
+        
+        ThemePreferences.init(applicationContext)
         
         lifecycleScope.launch {
             SeedManager.initialize(applicationContext)
         }
 
         setContent {
-            MaterialTheme {
+            val useSystemTheme by ThemePreferences.useSystemTheme
+            val isDarkMode by ThemePreferences.isDarkMode
+            val systemInDarkTheme = isSystemInDarkTheme()
+            
+            val darkTheme = if (useSystemTheme) systemInDarkTheme else isDarkMode
+            
+            SwipyTheme(darkTheme = darkTheme) {
                 var showLanding by remember { mutableStateOf(true) }
                 var showRegister by remember { mutableStateOf(false) }
                 var showProfile by remember { mutableStateOf(false) }
@@ -61,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 val profileViewModel = remember {
-                    ProfileViewModel(userRepo)
+                    ProfileViewModel(authRepo)
                 }
                 
                 LaunchedEffect(swipeViewModel) {
@@ -88,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     showMatchesListScreen && user != null -> {
                         MatchesListScreen(
                             currentUser = user!!,
-                            userRepository = userRepo,
+                            swipeRepositoryImpl = userRepo,
                             onBack = {
                                 showMatchesListScreen = false
                             },
