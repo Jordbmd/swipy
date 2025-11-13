@@ -20,7 +20,6 @@ object ThemePreferences {
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         
-        // Charger les préférences sauvegardées
         useSystemTheme.value = prefs.getBoolean(KEY_USE_SYSTEM_THEME, true)
         isDarkMode.value = prefs.getBoolean(KEY_DARK_MODE, false)
     }
@@ -29,7 +28,7 @@ object ThemePreferences {
         isDarkMode.value = enabled
         prefs.edit {
             putBoolean(KEY_DARK_MODE, enabled)
-            putBoolean(KEY_USE_SYSTEM_THEME, false)  // Désactive le thème système
+            putBoolean(KEY_USE_SYSTEM_THEME, false)  
         }
     }
     

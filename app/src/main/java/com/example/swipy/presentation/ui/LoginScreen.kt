@@ -12,11 +12,11 @@ import com.example.swipy.domain.models.User
 
 @Composable
 fun LoginScreen(
-    vm: AuthViewModel,
+    authViewModel: AuthViewModel,
     onGoRegister: () -> Unit,
     onLoggedIn: (User) -> Unit
 ) {
-    val state by vm.state.collectAsState()
+    val state by authViewModel.state.collectAsState()
 
     LaunchedEffect(state.loggedInUser) {
         val user = state.loggedInUser
@@ -41,7 +41,7 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(12.dp))
-        Button(onClick = { vm.login(Credentials(email, password)) }, enabled = !state.isLoading) {
+        Button(onClick = { authViewModel.login(Credentials(email, password)) }, enabled = !state.isLoading) {
             Text(if (state.isLoading) "…" else "Se connecter")
         }
         TextButton(onClick = onGoRegister, enabled = !state.isLoading) { Text("Créer un compte") }

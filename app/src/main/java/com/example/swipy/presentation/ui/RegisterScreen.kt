@@ -22,11 +22,11 @@ import com.example.swipy.presentation.viewModels.AuthViewModel
 
 @Composable
 fun RegisterScreen(
-    vm: AuthViewModel,
+    authViewModel: AuthViewModel,
     onGoLogin: () -> Unit,
     onRegistered: (User) -> Unit
 ) {
-    val state by vm.state.collectAsState()
+    val state by authViewModel.state.collectAsState()
 
     LaunchedEffect(state.loggedInUser) {
         val user = state.loggedInUser
@@ -170,7 +170,7 @@ fun RegisterScreen(
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = {
-                        vm.register(
+                        authViewModel.register(
                             RegisterData(
                                 email = email,
                                 password = password,

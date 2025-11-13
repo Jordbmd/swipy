@@ -31,8 +31,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val authRepo = AuthRepositoryImpl(applicationContext)
-        val vm = AuthViewModel(authRepo)
-        val userRepo = SwipeRepositoryImpl(applicationContext)
+        val authViewModel = AuthViewModel(authRepo)
+        val swipeRepo = SwipeRepositoryImpl(applicationContext)
         
         ThemePreferences.init(applicationContext)
         
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
                 val swipeViewModel = remember(user?.id) {
                     user?.let { 
                         android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${it.id}")
-                        SwipeViewModel(userRepo, it.id)
+                        SwipeViewModel(swipeRepo, it.id)
                     }
                 }
                 
@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     showMatchesListScreen && user != null -> {
                         MatchesListScreen(
                             currentUser = user!!,
-                            swipeRepositoryImpl = userRepo,
+                            swipeRepositoryImpl = swipeRepo,
                             onBack = {
                                 showMatchesListScreen = false
                             },
@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
                                 user = updatedUser
                             },
                             onLogoutClick = {
-                                vm.logout()
+                                authViewModel.logout()
                                 user = null
                                 showProfile = false
                                 showLanding = true
@@ -174,7 +174,7 @@ class MainActivity : ComponentActivity() {
 
                     showRegister -> {
                         RegisterScreen(
-                            vm = vm,
+                            authViewModel = authViewModel,
                             onGoLogin = { showRegister = false },
                             onRegistered = { u -> user = u }
                         )
@@ -182,7 +182,7 @@ class MainActivity : ComponentActivity() {
 
                     else -> {
                         LoginScreen(
-                            vm = vm,
+                            authViewModel = authViewModel,
                             onGoRegister = { showRegister = true },
                             onLoggedIn = { u -> user = u }
                         )
