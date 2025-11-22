@@ -18,8 +18,10 @@ import com.example.swipy.presentation.ui.LandingScreen
 import com.example.swipy.domain.models.User
 import com.example.swipy.data.repository.AuthRepositoryImpl
 import com.example.swipy.data.repository.SwipeRepositoryImpl
+import com.example.swipy.data.repository.ChatRepositoryImpl
 import com.example.swipy.presentation.viewModels.SwipeViewModel
 import com.example.swipy.presentation.viewModels.ProfileViewModel
+import com.example.swipy.presentation.viewModels.ChatViewModel
 import com.example.swipy.data.local.datasource.SeedManager
 import com.example.swipy.data.local.datasource.ThemePreferences
 import com.example.swipy.presentation.ui.theme.SwipyTheme
@@ -33,9 +35,10 @@ class MainActivity : ComponentActivity() {
         val authRepo = AuthRepositoryImpl(applicationContext)
         val authViewModel = AuthViewModel(authRepo)
         val swipeRepo = SwipeRepositoryImpl(applicationContext)
-        
+        val chatRepo = ChatRepositoryImpl(applicationContext)
+
         ThemePreferences.init(applicationContext)
-        
+
         lifecycleScope.launch {
             SeedManager.initialize(applicationContext)
         }
@@ -44,9 +47,9 @@ class MainActivity : ComponentActivity() {
             val useSystemTheme by ThemePreferences.useSystemTheme
             val isDarkMode by ThemePreferences.isDarkMode
             val systemInDarkTheme = isSystemInDarkTheme()
-            
+
             val darkTheme = if (useSystemTheme) systemInDarkTheme else isDarkMode
-            
+
             SwipyTheme(darkTheme = darkTheme) {
                 var showLanding by remember { mutableStateOf(true) }
                 var showRegister by remember { mutableStateOf(false) }
@@ -57,24 +60,28 @@ class MainActivity : ComponentActivity() {
                 var showMatchesListScreen by remember { mutableStateOf(false) }
                 var matchedUser by remember { mutableStateOf<User?>(null) }
                 var isOfflineMode by remember { mutableStateOf(false) }
-                
+
                 LaunchedEffect(user) {
                     if (user != null) {
                         isOfflineMode = authRepo.isOfflineMode()
                     }
                 }
-                
+
                 val swipeViewModel = remember(user?.id) {
-                    user?.let { 
+                    user?.let {
                         android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${it.id}")
                         SwipeViewModel(swipeRepo, it.id)
                     }
                 }
-                
+
                 val profileViewModel = remember {
                     ProfileViewModel(authRepo)
                 }
-                
+
+                val chatViewModel = remember(user?.id) {
+                    user?.let { ChatViewModel(chatRepo, it.id) }
+                }
+
                 LaunchedEffect(swipeViewModel) {
                     swipeViewModel?.state?.collect { state ->
                         if (state.matchedUser != null && !showMatchScreen) {
@@ -88,6 +95,8 @@ class MainActivity : ComponentActivity() {
                     showMessagesScreen && user != null && matchedUser != null -> {
                         MessagesScreen(
                             matchedUser = matchedUser!!,
+                            currentUserId = user!!.id,
+                            chatViewModel = chatViewModel!!,
                             onBack = {
                                 showMessagesScreen = false
                                 showMatchScreen = false
@@ -95,7 +104,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    
+
                     showMatchesListScreen && user != null -> {
                         MatchesListScreen(
                             currentUser = user!!,
@@ -110,7 +119,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    
+
                     showMatchScreen && user != null && matchedUser != null -> {
                         MatchScreen(
                             currentUser = user!!,
@@ -144,7 +153,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    
+
                     user != null && swipeViewModel != null -> {
                         HomeScreen(
                             swipeViewModel = swipeViewModel,
