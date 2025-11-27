@@ -235,6 +235,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
         bio: String?,
         city: String?,
         country: String?,
+        latitude: Double?,
+        longitude: Double?,
         maxDistance: Int,
         photos: List<String>
     ): User = withContext(Dispatchers.IO) {
@@ -248,6 +250,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
             bio = bio ?: "",
             city = city ?: "",
             country = country ?: "",
+            latitude = latitude ?: currentUser.latitude,
+            longitude = longitude ?: currentUser.longitude,
             maxDistance = maxDistance,
             photos = photos
         )
@@ -275,5 +279,34 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
         }
         
         updatedUser.toUser()
+    }
+    
+    override suspend fun updateUserLocation(
+        userId: Int,
+        city: String,
+        country: String,
+        latitude: Double,
+        longitude: Double
+    ): User? = withContext(Dispatchers.IO) {
+        try {
+            userDao.updateLocation(userId, city, country, latitude, longitude)
+            
+            try {
+                userRemoteDataSource.updateUser(
+                    userId = userId.toString(),
+                    firstname = "",
+                    lastname = "",
+                    age = 0,
+                    bio = "",
+                    city = city,
+                    country = country
+                )
+            } catch (_: Exception) {
+            }
+            
+            userDao.getUserById(userId)?.toUser()
+        } catch (e: Exception) {
+            null
+        }
     }
 }

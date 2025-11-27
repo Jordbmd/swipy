@@ -25,10 +25,23 @@ import com.example.swipy.presentation.viewModels.ChatViewModel
 import com.example.swipy.data.local.datasource.SeedManager
 import com.example.swipy.data.local.datasource.ThemePreferences
 import com.example.swipy.presentation.ui.theme.SwipyTheme
+import com.example.swipy.domain.utils.LocationManager
 import kotlinx.coroutines.launch
 import com.example.swipy.presentation.ui.ProfileScreen
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Icon
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -36,6 +49,8 @@ class MainActivity : ComponentActivity() {
         val authViewModel = AuthViewModel(authRepo)
         val swipeRepo = SwipeRepositoryImpl(applicationContext)
         val chatRepo = ChatRepositoryImpl(applicationContext)
+        
+        val locationPrefs = applicationContext.getSharedPreferences("location_prefs", MODE_PRIVATE)
 
         ThemePreferences.init(applicationContext)
 
@@ -60,10 +75,60 @@ class MainActivity : ComponentActivity() {
                 var showMatchesListScreen by remember { mutableStateOf(false) }
                 var matchedUser by remember { mutableStateOf<User?>(null) }
                 var isOfflineMode by remember { mutableStateOf(false) }
+                var showLocationPermissionDialog by remember { mutableStateOf(false) }
+                val hasAskedForLocationPermission = remember { 
+                    locationPrefs.getBoolean("has_asked_location_permission", false) 
+                }
+                
+                val locationManager = remember { LocationManager(applicationContext) }
+                
+                val locationPermissions = rememberMultiplePermissionsState(
+                    permissions = listOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
 
+                suspend fun updateUserLocation() {
+                    if (user != null && locationManager.hasLocationPermission()) {
+                        android.util.Log.d("MainActivity", "Updating location for user ${user!!.id}")
+                        val result = locationManager.getCurrentLocation()
+                        result.onSuccess { locationData ->
+                            android.util.Log.d("MainActivity", "Location updated: ${locationData.city}, ${locationData.country}")
+                            val updatedUser = authRepo.updateUserLocation(
+                                userId = user!!.id,
+                                city = locationData.city,
+                                country = locationData.country,
+                                latitude = locationData.latitude,
+                                longitude = locationData.longitude
+                            )
+                            if (updatedUser != null) {
+                                user = updatedUser
+                            }
+                        }.onFailure { error ->
+                            android.util.Log.e("MainActivity", "Failed to update location: ${error.message}")
+                        }
+                    }
+                }
+                
+                LaunchedEffect(locationPermissions.permissions.map { it.status.isGranted }) {
+                    if (locationPermissions.permissions.any { it.status.isGranted }) {
+                        updateUserLocation()
+                    }
+                }
+                
                 LaunchedEffect(user) {
                     if (user != null) {
                         isOfflineMode = authRepo.isOfflineMode()
+                    
+                        val hasPermission = locationManager.hasLocationPermission()
+                        
+                        if (hasPermission) {
+                            updateUserLocation()
+                        } else if (!hasAskedForLocationPermission) {
+                            showLocationPermissionDialog = true
+                            locationPrefs.edit().putBoolean("has_asked_location_permission", true).apply()
+                        }
                     }
                 }
 
@@ -75,7 +140,17 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val profileViewModel = remember {
-                    ProfileViewModel(authRepo)
+                    ProfileViewModel(authRepo, applicationContext)
+                }
+                
+                val profileState by profileViewModel.state.collectAsState()
+                
+                LaunchedEffect(profileState.user) {
+                    if (profileState.user != null && user != null) {
+                        if (profileState.user!!.id == user!!.id) {
+                            user = profileState.user
+                        }
+                    }
                 }
 
                 val chatViewModel = remember(user?.id) {
@@ -196,6 +271,53 @@ class MainActivity : ComponentActivity() {
                             onLoggedIn = { u -> user = u }
                         )
                     }
+                }
+                
+                if (showLocationPermissionDialog) {
+                    AlertDialog(
+                        onDismissRequest = { 
+                            showLocationPermissionDialog = false 
+                        },
+                        icon = {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        title = { 
+                            Text("Activer la localisation ?") 
+                        },
+                        text = { 
+                            Text(
+                                "Swipy fonctionne mieux avec votre localisation activée.\n\n" +
+                                "Cela nous permet de :\n" +
+                                "• Trouver des personnes près de chez vous\n" +
+                                "• Mettre à jour automatiquement votre position\n" +
+                                "• Afficher des résultats pertinents\n\n" +
+                                "Vous pouvez refuser et renseigner votre ville manuellement."
+                            ) 
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showLocationPermissionDialog = false
+                                    locationPermissions.launchMultiplePermissionRequest()
+                                }
+                            ) {
+                                Text("Activer")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { 
+                                    showLocationPermissionDialog = false 
+                                }
+                            ) {
+                                Text("Plus tard")
+                            }
+                        }
+                    )
                 }
             }
         }

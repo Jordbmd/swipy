@@ -30,6 +30,9 @@ interface UserDao {
     @Update
     suspend fun update(user: UserEntity)
     
+    @Query("UPDATE users SET city = :city, country = :country, latitude = :latitude, longitude = :longitude WHERE id = :userId")
+    suspend fun updateLocation(userId: Int, city: String, country: String, latitude: Double, longitude: Double)
+    
     @Delete
     suspend fun delete(user: UserEntity)
     

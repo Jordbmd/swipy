@@ -32,7 +32,17 @@ interface AuthRepository {
         bio: String?,
         city: String?,
         country: String?,
+        latitude: Double?,
+        longitude: Double?,
         maxDistance: Int,
         photos: List<String>
     ): User
+    
+    suspend fun updateUserLocation(
+        userId: Int,
+        city: String,
+        country: String,
+        latitude: Double,
+        longitude: Double
+    ): User?
 }

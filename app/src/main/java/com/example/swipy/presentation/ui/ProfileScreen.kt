@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,13 +26,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.swipy.domain.models.User
 import com.example.swipy.presentation.viewModels.ProfileViewModel
 import com.example.swipy.data.local.datasource.ThemePreferences
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 
 @SuppressLint("MutableCollectionMutableState")
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun ProfileScreen(
     user: User,
@@ -47,11 +54,36 @@ fun ProfileScreen(
     var bio by remember { mutableStateOf(user.bio ?: "") }
     var city by remember { mutableStateOf(user.city ?: "") }
     var country by remember { mutableStateOf(user.country ?: "") }
+    var latitude by remember { mutableStateOf(user.latitude) }
+    var longitude by remember { mutableStateOf(user.longitude) }
     var maxDistance by remember { mutableStateOf(user.maxDistance.toString()) }
     var photos by remember { mutableStateOf(user.photos.toList()) }
     
     var showAddPhotoDialog by remember { mutableStateOf(false) }
     var newPhotoUrl by remember { mutableStateOf("") }
+    var showLocationDialog by remember { mutableStateOf(false) }
+    var requestLocationAfterPermission by remember { mutableStateOf(false) }
+    
+    val locationPermissions = rememberMultiplePermissionsState(
+        permissions = listOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
+    
+    LaunchedEffect(locationPermissions.permissions.map { it.status.isGranted }) {
+        if (requestLocationAfterPermission && locationPermissions.permissions.any { it.status.isGranted }) {
+            requestLocationAfterPermission = false
+            profileViewModel.getCurrentLocation { locationData, error ->
+                if (locationData != null) {
+                    city = locationData.city
+                    country = locationData.country
+                    latitude = locationData.latitude
+                    longitude = locationData.longitude
+                }
+            }
+        }
+    }
     
     LaunchedEffect(profileState.user) {
         if (profileState.user != null) {
@@ -62,6 +94,8 @@ fun ProfileScreen(
             bio = updatedUser.bio ?: ""
             city = updatedUser.city ?: ""
             country = updatedUser.country ?: ""
+            latitude = updatedUser.latitude
+            longitude = updatedUser.longitude
             maxDistance = updatedUser.maxDistance.toString()
             photos = updatedUser.photos.toMutableList()
             onProfileUpdated(updatedUser)
@@ -84,17 +118,42 @@ fun ProfileScreen(
                             val maxDistInt = maxDistance.toIntOrNull()
                             
                             if (ageInt != null && maxDistInt != null) {
-                                profileViewModel.updateProfile(
-                                    userId = user.id,
-                                    firstname = firstname,
-                                    lastname = lastname,
-                                    age = ageInt,
-                                    bio = bio,
-                                    city = city,
-                                    country = country,
-                                    maxDistance = maxDistInt,
-                                    photos = photos
-                                )
+                                if (city.isNotBlank() && country.isNotBlank()) {
+                                    profileViewModel.validateLocation(city, country) { locationData, error ->
+                                        if (locationData != null) {
+                                            latitude = locationData.latitude
+                                            longitude = locationData.longitude
+                                        }
+                                        
+                                        profileViewModel.updateProfile(
+                                            userId = user.id,
+                                            firstname = firstname,
+                                            lastname = lastname,
+                                            age = ageInt,
+                                            bio = bio,
+                                            city = city,
+                                            country = country,
+                                            latitude = latitude,
+                                            longitude = longitude,
+                                            maxDistance = maxDistInt,
+                                            photos = photos
+                                        )
+                                    }
+                                } else {
+                                    profileViewModel.updateProfile(
+                                        userId = user.id,
+                                        firstname = firstname,
+                                        lastname = lastname,
+                                        age = ageInt,
+                                        bio = bio,
+                                        city = city,
+                                        country = country,
+                                        latitude = latitude,
+                                        longitude = longitude,
+                                        maxDistance = maxDistInt,
+                                        photos = photos
+                                    )
+                                }
                                 isEditing = false
                             }
                         }) {
@@ -223,22 +282,161 @@ fun ProfileScreen(
                     icon = Icons.Default.LocationOn
                 ) {
                     if (isEditing) {
+                        Button(
+                            onClick = {
+                                if (locationPermissions.permissions.any { it.status.isGranted }) {
+                                    profileViewModel.getCurrentLocation { locationData, error ->
+                                        if (locationData != null) {
+                                            city = locationData.city
+                                            country = locationData.country
+                                            latitude = locationData.latitude
+                                            longitude = locationData.longitude
+                                        }
+                                    }
+                                } else {
+                                    requestLocationAfterPermission = true
+                                    locationPermissions.launchMultiplePermissionRequest()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ) {
+                            Icon(Icons.Default.MyLocation, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            if (profileState.isLoadingLocation) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("Utiliser ma position GPS")
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            HorizontalDivider(modifier = Modifier.weight(1f))
+                            Text(
+                                text = "OU",
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            HorizontalDivider(modifier = Modifier.weight(1f))
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "Saisie manuelle",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
                         OutlinedTextField(
                             value = city,
-                            onValueChange = { city = it },
+                            onValueChange = { 
+                                city = it
+                                if (it.length >= 2) {
+                                    profileViewModel.searchLocation("$it, $country")
+                                }
+                            },
                             label = { Text("Ville") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            trailingIcon = {
+                                if (city.isNotEmpty()) {
+                                    IconButton(onClick = { city = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Effacer")
+                                    }
+                                }
+                            }
                         )
+                        
                         Spacer(modifier = Modifier.height(8.dp))
+                        
                         OutlinedTextField(
                             value = country,
-                            onValueChange = { country = it },
+                            onValueChange = { 
+                                country = it
+                                if (city.length >= 2 && it.length >= 2) {
+                                    profileViewModel.searchLocation("$city, $it")
+                                }
+                            },
                             label = { Text("Pays") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            trailingIcon = {
+                                if (country.isNotEmpty()) {
+                                    IconButton(onClick = { country = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Effacer")
+                                    }
+                                }
+                            }
                         )
+                        
+                        if (profileState.locationSuggestions.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(4.dp)
+                                ) {
+                                    Text(
+                                        text = "Suggestions :",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier = Modifier.padding(8.dp),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    profileState.locationSuggestions.take(5).forEach { suggestion ->
+                                        TextButton(
+                                            onClick = {
+                                                city = suggestion.city
+                                                country = suggestion.country
+                                                latitude = suggestion.latitude
+                                                longitude = suggestion.longitude
+                                                profileViewModel.clearLocationSuggestions()
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Start
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Place,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("${suggestion.city}, ${suggestion.country}")
+                                            }
+                                        }
+                                        if (suggestion != profileState.locationSuggestions.last()) {
+                                            HorizontalDivider()
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         ProfileInfoRow(label = "Ville", value = city.ifEmpty { "Non renseignée" })
                         ProfileInfoRow(label = "Pays", value = country.ifEmpty { "Non renseigné" })
+                        if (latitude != null && longitude != null) {
+                            ProfileInfoRow(
+                                label = "Coordonnées", 
+                                value = "%.4f, %.4f".format(latitude, longitude)
+                            )
+                        }
                     }
                 }
                 
