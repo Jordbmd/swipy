@@ -47,6 +47,43 @@ fun RegisterScreen(
     var country by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var validationError by remember { mutableStateOf<String?>(null) }
+
+    fun validateCurrentStep(): String? {
+        return when (step) {
+            0 -> {
+                when {
+                    firstname.isBlank() -> "Le prénom est requis"
+                    lastname.isBlank() -> "Le nom est requis"
+                    age.isBlank() -> "L'âge est requis"
+                    age.toIntOrNull() == null -> "L'âge doit être un nombre"
+                    (age.toIntOrNull() ?: 0) < 18 -> "Vous devez avoir au moins 18 ans"
+                    (age.toIntOrNull() ?: 0) > 120 -> "L'âge n'est pas valide"
+                    else -> null
+                }
+            }
+            1 -> {
+                when {
+                    email.isBlank() -> "L'email est requis"
+                    !email.contains("@") -> "L'email n'est pas valide"
+                    password.isBlank() -> "Le mot de passe est requis"
+                    password.length < 6 -> "Le mot de passe doit contenir au moins 6 caractères"
+                    confirm.isBlank() -> "Veuillez confirmer le mot de passe"
+                    password != confirm -> "Les mots de passe ne correspondent pas"
+                    else -> null
+                }
+            }
+            2 -> {
+                when {
+                    bio.isBlank() -> "La bio est requise"
+                    city.isBlank() -> "La ville est requise"
+                    country.isBlank() -> "Le pays est requis"
+                    else -> null
+                }
+            }
+            else -> null
+        }
+    }
 
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -201,17 +238,39 @@ fun RegisterScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(
-                onClick = { if (step > 0) step-- },
+                onClick = { 
+                    if (step > 0) {
+                        step--
+                        validationError = null
+                    }
+                },
                 enabled = step > 0
             ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Précédent")
             }
 
             if (step < 3) {
-                IconButton(onClick = { step++ }) {
+                IconButton(onClick = { 
+                    val error = validateCurrentStep()
+                    if (error != null) {
+                        validationError = error
+                    } else {
+                        validationError = null
+                        step++
+                    }
+                }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Suivant")
                 }
             }
+        }
+
+        validationError?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = it, 
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
 
         Spacer(Modifier.height(12.dp))
