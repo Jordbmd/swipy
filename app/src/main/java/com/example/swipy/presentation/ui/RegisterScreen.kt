@@ -138,62 +138,118 @@ fun RegisterScreen(
         onResult = { uri -> photoUri = uri }
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text(
-            text = "Étape ${step + 1} / 4",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Étape ${step + 1} / 4",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(8.dp))
 
-        when (step) {
-            0 -> {
-                Text("Informations personnelles", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(firstname, { firstname = it }, label = { Text("Prénom") }, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(lastname, { lastname = it }, label = { Text("Nom") }, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(age, { age = it.filter { c -> c.isDigit() } }, label = { Text("Âge") }, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
-                Box {
+            when (step) {
+                0 -> {
+                    Text(
+                        text = "Informations personnelles",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    
                     OutlinedTextField(
-                        value = gender,
-                        onValueChange = {},
-                        label = { Text("Genre") },
+                        value = firstname,
+                        onValueChange = { firstname = it },
+                        label = { Text("Prénom") },
                         modifier = Modifier.fillMaxWidth(),
-                        readOnly = true
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
                     )
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        listOf("homme", "femme", "autre").forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    gender = option
-                                    expanded = false
-                                }
+                    Spacer(Modifier.height(12.dp))
+                    
+                    OutlinedTextField(
+                        value = lastname,
+                        onValueChange = { lastname = it },
+                        label = { Text("Nom") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    
+                    OutlinedTextField(
+                        value = age,
+                        onValueChange = { age = it.filter { c -> c.isDigit() } },
+                        label = { Text("Âge") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    
+                    Box {
+                        OutlinedTextField(
+                            value = gender,
+                            onValueChange = {},
+                            label = { Text("Genre") },
+                            modifier = Modifier.fillMaxWidth(),
+                            readOnly = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
+                        )
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            listOf("homme", "femme", "autre").forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        gender = option
+                                        expanded = false
+                                    }
+                                )
+                            }
                         }
+                        Spacer(
+                            Modifier
+                                .matchParentSize()
+                                .clickable { expanded = true }
+                        )
                     }
-                    Spacer(
-                        Modifier
-                            .matchParentSize()
-                            .clickable { expanded = true }
-                    )
                 }
-            }
 
-            1 -> {
-                Text("Localisation", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(12.dp))
+                1 -> {
+                    Text(
+                        text = "Localisation",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(16.dp))
                 
                 Button(
                     onClick = {
@@ -239,14 +295,20 @@ fun RegisterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    )
                     Text(
                         text = "OU",
                         modifier = Modifier.padding(horizontal = 8.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    )
                 }
                 
                 Spacer(Modifier.height(12.dp))
@@ -272,6 +334,12 @@ fun RegisterScreen(
                         }, 
                         label = { Text("Ville") }, 
                         modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
                         trailingIcon = {
                             if (city.isNotEmpty()) {
                                 IconButton(onClick = { 
@@ -318,7 +386,7 @@ fun RegisterScreen(
                                         }
                                     }
                                     if (suggestion != locationSuggestions.take(5).last()) {
-                                        HorizontalDivider()
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                                     }
                                 }
                             }
@@ -326,7 +394,8 @@ fun RegisterScreen(
                     }
                 }
                 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
+                
                 OutlinedTextField(
                     value = country, 
                     onValueChange = { newValue ->
@@ -344,6 +413,12 @@ fun RegisterScreen(
                     }, 
                     label = { Text("Pays") }, 
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    ),
                     trailingIcon = {
                         if (country.isNotEmpty()) {
                             IconButton(onClick = { 
@@ -359,34 +434,83 @@ fun RegisterScreen(
             }
 
             2 -> {
-                Text("Identifiants de connexion", style = MaterialTheme.typography.headlineSmall)
+                Text(
+                    text = "Identifiants de connexion",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(16.dp))
+                
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(email, { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Mot de passe") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
+                
                 OutlinedTextField(
                     value = confirm,
                     onValueChange = { confirm = it },
                     label = { Text("Confirmer le mot de passe") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
                 )
             }
 
             3 -> {
-                Text("Profil et photo", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(bio, { bio = it }, label = { Text("Bio") }, modifier = Modifier.fillMaxWidth())
+                Text(
+                    text = "Profil et photo",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
                 Spacer(Modifier.height(16.dp))
                 
-                Text("Photo de profil (optionnelle)", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Bio") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+                Spacer(Modifier.height(16.dp))
+                
+                Text(
+                    text = "Photo de profil (optionnelle)",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
                 Spacer(Modifier.height(12.dp))
 
                 Box(
@@ -438,7 +562,6 @@ fun RegisterScreen(
                 ) {
                     Text(if (state.isLoading) "…" else "Créer le compte")
                 }
-
             }
         }
 
@@ -485,8 +608,18 @@ fun RegisterScreen(
 
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = onGoLogin, enabled = !state.isLoading) {
-            Text("J’ai déjà un compte")
+            Text(
+                text = "J'ai déjà un compte",
+                color = MaterialTheme.colorScheme.primary
+            )
         }
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        state.error?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        }
     }
 }
