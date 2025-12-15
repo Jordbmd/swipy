@@ -39,7 +39,6 @@ class ChatViewModel(private val repo: ChatRepository, private val currentUserId:
             _state.value = _state.value.copy(isSending = true)
             val res = repo.sendMessage(convId, currentUserId, text)
             _state.value = _state.value.copy(isSending = false)
-            // mark read for receiver not necessary here
         }
     }
 

@@ -28,4 +28,12 @@ interface SwipeRepository {
     
     
     suspend fun getPotentialMatches(userId: Int): List<User>
+
+    suspend fun getUsersForSwipe(
+        minAge: Int,
+        maxAge: Int,
+        maxDistance: Float,
+        userLat: Double,
+        userLon: Double
+    ): Result<List<User>>
 }

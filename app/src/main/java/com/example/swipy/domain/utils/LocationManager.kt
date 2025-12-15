@@ -158,5 +158,16 @@ class LocationManager(private val context: Context) {
             Result.failure(e)
         }
     }
+    
+    fun calculateDistance(
+        lat1: Double,
+        lon1: Double,
+        lat2: Double,
+        lon2: Double
+    ): Float {
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(lat1, lon1, lat2, lon2, results)
+        return results[0] / 1000
+    }
 }
 

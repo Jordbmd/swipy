@@ -18,7 +18,6 @@ import kotlinx.coroutines.withContext
 class AuthRepositoryImpl(context: Context) : AuthRepository {
 
     private val userRemoteDataSource = UserRemoteDataSource()
-    private val swipeRepositoryImpl = SwipeRepositoryImpl(context)
 
     private val db = Room.databaseBuilder(
         context,
@@ -49,9 +48,6 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                         if (apiResult.isSuccess) {
                             prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, false) }
                             syncUsersFromApi()
-                            swipeRepositoryImpl.syncSwipesFromApi(localUser.id)
-
-                            swipeRepositoryImpl.syncPendingSwipes()
                         } else {
                             prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, true) }
                         }
@@ -287,24 +283,21 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
         country: String,
         latitude: Double,
         longitude: Double
-    ): User? = withContext(Dispatchers.IO) {
-        try {
-            userDao.updateLocation(userId, city, country, latitude, longitude)
-            
-            try {
-                userRemoteDataSource.updateUser(
-                    userId = userId.toString(),
-                    firstname = "",
-                    lastname = "",
-                    age = 0,
-                    bio = "",
+    ): User? {
+        return try {
+            val user = userDao.getUserById(userId)
+            if (user != null) {
+                val updatedUser = user.copy(
                     city = city,
-                    country = country
+                    country = country,
+                    latitude = latitude,
+                    longitude = longitude
                 )
-            } catch (_: Exception) {
+                userDao.update(updatedUser)
+                updatedUser.toUser()
+            } else {
+                null
             }
-            
-            userDao.getUserById(userId)?.toUser()
         } catch (e: Exception) {
             null
         }

@@ -10,19 +10,20 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.MailOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.graphics.Color
-import com.example.swipy.presentation.viewModels.SwipeViewModel
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.swipy.presentation.ui.components.SwipeCard
+import com.example.swipy.presentation.viewModels.SwipeViewModel
 
 @Composable
 fun HomeScreen(
@@ -71,7 +72,7 @@ fun HomeScreen(
                 ) {
                     IconButton(onClick = onMessagesClick) {
                         Icon(
-                            Icons.Default.MailOutline,
+                            Icons.Outlined.MailOutline,
                             contentDescription = "Messages",
                             tint = Color(0xFFFF6B9D)
                         )
@@ -148,90 +149,67 @@ fun HomeScreen(
                 }
             }
 
-            if (currentProfile != null) {
-                Row(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp, start = 32.dp, end = 32.dp)
+                    .align(Alignment.BottomCenter),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        swipeViewModel.swipeLeft()
+                    },
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 36.dp),
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .size(64.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 4.dp
+                    )
                 ) {
-                    IconButton(
-                        onClick = { swipeViewModel.swipeLeft() },
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFE57373))
-                    ) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Non",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { swipeViewModel.loadProfiles() },
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF64B5F6))
-                    ) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Recharger",
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { swipeViewModel.swipeRight() },
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF81C784))
-                    ) {
-                        Icon(
-                            Icons.Default.Favorite,
-                            contentDescription = "J'aime",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Dislike",
+                        tint = Color(0xFFFF6B6B),
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
-            }
 
-            if (isOfflineMode) {
-                Surface(
+                FloatingActionButton(
+                    onClick = { swipeViewModel.loadProfiles() },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .padding(top = 40.dp),
-                    color = Color(0xFFFF9800),
-                    shadowElevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                        .size(56.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 4.dp
+                    )
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Mode hors ligne",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Mode hors ligne",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    }
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                FloatingActionButton(
+                    onClick = {
+                        swipeViewModel.swipeRight()
+                    },
+                    modifier = Modifier
+                        .size(64.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 4.dp
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Favorite,
+                        contentDescription = "Like",
+                        tint = Color(0xFF4CAF50),
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
         }

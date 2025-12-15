@@ -20,7 +20,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
-class SwipeRepositoryImpl(context: Context) : SwipeRepository {
+class SwipeRepositoryImpl(
+    context: Context,
+    private val currentUserId: Int
+) : SwipeRepository {
+
+    init {
+        Log.d("SwipeRepository", "SwipeRepositoryImpl initialized with currentUserId: $currentUserId")
+    }
 
     private val db = Room.databaseBuilder(
         context.applicationContext,
@@ -119,10 +126,6 @@ class SwipeRepositoryImpl(context: Context) : SwipeRepository {
                 return@withContext
             }
 
-
-            var successCount = 0
-            var failCount = 0
-
             unsyncedSwipes.forEach { swipe ->
                 try {
                     val result = swipeRemoteDataSource.createSwipe(
@@ -133,12 +136,8 @@ class SwipeRepositoryImpl(context: Context) : SwipeRepository {
 
                     result.onSuccess {
                         swipeDao.markAsSynced(swipe.userId, swipe.targetUserId)
-                        successCount++
-                    }.onFailure {
-                        failCount++
                     }
-                } catch (e: Exception) {
-                    failCount++
+                } catch (_: Exception) {
                 }
             }
 
@@ -152,9 +151,6 @@ class SwipeRepositoryImpl(context: Context) : SwipeRepository {
             val result: Result<List<SwipeDto>> = swipeRemoteDataSource.getSwipesByUser(userId)
             
             result.onSuccess { swipeDtos: List<SwipeDto> ->
-                var newCount = 0
-                var duplicateCount = 0
-
                 swipeDtos.forEach { swipeDto: SwipeDto ->
                     val existing = swipeDao.getSwipeByUserAndTarget(
                         swipeDto.userId,
@@ -164,27 +160,17 @@ class SwipeRepositoryImpl(context: Context) : SwipeRepository {
                     if (existing == null) {
                         val swipeEntity = swipeDto.toEntity()
                         swipeDao.insert(swipeEntity)
-                        newCount++
-                    } else {
-                        duplicateCount++
                     }
                 }
-                
-            }.onFailure { error ->
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
         }
     }
 
    
     override suspend fun hasSwipedUser(userId: Int, targetUserId: Int): Boolean = withContext(Dispatchers.IO) {
         val swipe = swipeDao.getSwipeByUserAndTarget(userId, targetUserId)
-        
-        if (swipe != null) {
-            true
-        } else {
-            false
-        }
+        swipe != null
     }
     
    
@@ -196,13 +182,68 @@ class SwipeRepositoryImpl(context: Context) : SwipeRepository {
             val swipedUserIds: Set<Int> = userSwipes.map { swipeEntity: SwipeEntity -> swipeEntity.targetUserId }.toSet()
             
             val potentialMatches: List<User> = allUsers
-                .filter { userEntity: UserEntity -> userEntity.id != userId }  // Pas soi-même
-                .filter { userEntity: UserEntity -> swipedUserIds.contains(userEntity.id).not() }  // Pas déjà swipé
+                .filter { userEntity: UserEntity -> userEntity.id != userId }
+                .filter { userEntity: UserEntity -> !swipedUserIds.contains(userEntity.id) }
                 .map { userEntity: UserEntity -> userEntity.toUser() }
             
             potentialMatches
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
+    }
+
+    override suspend fun getUsersForSwipe(
+        minAge: Int,
+        maxAge: Int,
+        maxDistance: Float,
+        userLat: Double,
+        userLon: Double
+    ): Result<List<User>> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("SwipeRepository", "getUsersForSwipe - currentUserId: $currentUserId, minAge: $minAge, maxAge: $maxAge, maxDistance: $maxDistance")
+            Log.d("SwipeRepository", "User location: lat=$userLat, lon=$userLon")
+            
+            val allUsers = userDao.getAllUsers()
+            Log.d("SwipeRepository", "Total users in database: ${allUsers.size}")
+            
+            val usersWithoutSwipeFilter = userDao.getUsersForSwipeWithoutSwipeFilter(currentUserId, minAge, maxAge)
+            Log.d("SwipeRepository", "Users matching age filter (excluding current user): ${usersWithoutSwipeFilter.size}")
+            
+            val existingSwipes = swipeDao.getSwipesByUser(currentUserId)
+            Log.d("SwipeRepository", "Existing swipes for user $currentUserId: ${existingSwipes.size}")
+            existingSwipes.forEach { swipe ->
+                Log.d("SwipeRepository", "  - Swiped user ${swipe.targetUserId}: ${swipe.action}")
+            }
+            
+            val users = userDao.getUsersForSwipeFiltered(currentUserId, minAge, maxAge)
+            Log.d("SwipeRepository", "Found ${users.size} users after age/swipe filter")
+            
+            val filteredUsers = users
+                .map { it.toUser() }
+                .filter { user ->
+                    val lat = user.latitude ?: 0.0
+                    val lon = user.longitude ?: 0.0
+                    val distance = calculateDistance(userLat, userLon, lat, lon)
+                    Log.d("SwipeRepository", "User ${user.id} (${user.firstname}): lat=$lat, lon=$lon, distance=${distance}km, maxDistance=${maxDistance}km")
+                    distance <= maxDistance
+                }
+            
+            Log.d("SwipeRepository", "After distance filter: ${filteredUsers.size} users")
+            Result.success(filteredUsers)
+        } catch (e: Exception) {
+            Log.e("SwipeRepository", "Error in getUsersForSwipe", e)
+            Result.failure(e)
+        }
+    }
+    
+    private fun calculateDistance(
+        lat1: Double,
+        lon1: Double,
+        lat2: Double,
+        lon2: Double
+    ): Float {
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(lat1, lon1, lat2, lon2, results)
+        return results[0] / 1000
     }
 }

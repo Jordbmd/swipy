@@ -53,7 +53,6 @@ class SwipeViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
         
-        // Mock Android Log
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
         every { Log.e(any(), any()) } returns 0
@@ -181,7 +180,6 @@ class SwipeViewModelTest {
         viewModel = SwipeViewModel(repository, 100)
         advanceUntilIdle()
 
-        // Swipe through the only profile
         viewModel.swipeRight()
         advanceUntilIdle()
 

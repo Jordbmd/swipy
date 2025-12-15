@@ -41,6 +41,7 @@ import com.google.accompanist.permissions.isGranted
 fun ProfileScreen(
     user: User,
     profileViewModel: ProfileViewModel,
+    swipeViewModel: com.example.swipy.presentation.viewModels.SwipeViewModel? = null,
     onBackClick: () -> Unit,
     onProfileUpdated: (User) -> Unit,
     onLogoutClick: () -> Unit
@@ -57,7 +58,20 @@ fun ProfileScreen(
     var latitude by remember { mutableStateOf(user.latitude) }
     var longitude by remember { mutableStateOf(user.longitude) }
     var maxDistance by remember { mutableStateOf(user.maxDistance.toString()) }
+    
+    val currentMinAge by swipeViewModel?.minAge?.collectAsState() ?: remember { mutableStateOf(18) }
+    val currentMaxAge by swipeViewModel?.maxAge?.collectAsState() ?: remember { mutableStateOf(99) }
+    val currentMaxDistance by swipeViewModel?.maxDistance?.collectAsState() ?: remember { mutableStateOf(10000f) }
+    
+    var minAge by remember { mutableStateOf(currentMinAge) }
+    var maxAge by remember { mutableStateOf(currentMaxAge) }
     var photos by remember { mutableStateOf(user.photos.toList()) }
+    
+    LaunchedEffect(currentMinAge, currentMaxAge, currentMaxDistance) {
+        minAge = currentMinAge
+        maxAge = currentMaxAge
+        maxDistance = currentMaxDistance.toInt().toString()
+    }
     
     var showAddPhotoDialog by remember { mutableStateOf(false) }
     var newPhotoUrl by remember { mutableStateOf("") }
@@ -154,6 +168,13 @@ fun ProfileScreen(
                                         photos = photos
                                     )
                                 }
+                                
+                                swipeViewModel?.updateFilters(
+                                    minAge = minAge,
+                                    maxAge = maxAge,
+                                    maxDistance = maxDistInt.toFloat()
+                                )
+                                
                                 isEditing = false
                             }
                         }) {
@@ -252,7 +273,6 @@ fun ProfileScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Bio
                 ProfileInfoCard(
                     title = "À propos de moi",
                     icon = Icons.Default.Info
@@ -447,6 +467,38 @@ fun ProfileScreen(
                     icon = Icons.Default.Settings
                 ) {
                     if (isEditing) {
+                        Text(
+                            "Tranche d'âge",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("${minAge} ans", style = MaterialTheme.typography.bodyMedium)
+                            Text("${maxAge} ans", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        RangeSlider(
+                            value = minAge.toFloat()..maxAge.toFloat(),
+                            onValueChange = { range ->
+                                minAge = range.start.toInt()
+                                maxAge = range.endInclusive.toInt()
+                            },
+                            valueRange = 18f..99f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            "Distance maximale",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("${maxDistance} km", style = MaterialTheme.typography.bodyMedium)
                         OutlinedTextField(
                             value = maxDistance,
                             onValueChange = { maxDistance = it },
@@ -454,6 +506,7 @@ fun ProfileScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
+                        ProfileInfoRow(label = "Âge recherché", value = "$minAge - $maxAge ans")
                         ProfileInfoRow(label = "Distance maximale", value = "$maxDistance km")
                         ProfileInfoRow(
                             label = "Recherche", 

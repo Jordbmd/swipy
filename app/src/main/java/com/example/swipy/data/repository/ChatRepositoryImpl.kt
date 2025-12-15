@@ -78,7 +78,6 @@ class ChatRepositoryImpl(context: Context) : ChatRepository {
             sentStatus = "SENT"
         )
         val id = messageDao.insertMessage(entity)
-        // update conversation last message
         val conv = conversationDao.getConversationById(conversationId)
         if (conv != null) {
             val updated = conv.copy(lastMessageText = content, lastMessageAt = entity.timestamp)

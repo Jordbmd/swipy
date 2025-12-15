@@ -11,6 +11,7 @@ import com.example.swipy.presentation.ui.HomeScreen
 import com.example.swipy.presentation.ui.MatchScreen
 import com.example.swipy.presentation.ui.MessagesScreen
 import com.example.swipy.presentation.ui.MatchesListScreen
+import com.example.swipy.presentation.ui.FilterScreen
 import com.example.swipy.presentation.viewModels.AuthViewModel
 import com.example.swipy.presentation.ui.LoginScreen
 import com.example.swipy.presentation.ui.RegisterScreen
@@ -24,21 +25,18 @@ import com.example.swipy.presentation.viewModels.ProfileViewModel
 import com.example.swipy.presentation.viewModels.ChatViewModel
 import com.example.swipy.data.local.datasource.SeedManager
 import com.example.swipy.data.local.datasource.ThemePreferences
+import com.example.swipy.data.local.datasource.FilterPreferences
 import com.example.swipy.presentation.ui.theme.SwipyTheme
 import com.example.swipy.domain.utils.LocationManager
 import kotlinx.coroutines.launch
 import com.example.swipy.presentation.ui.ProfileScreen
 import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.isGranted
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -47,8 +45,8 @@ class MainActivity : ComponentActivity() {
 
         val authRepo = AuthRepositoryImpl(applicationContext)
         val authViewModel = AuthViewModel(authRepo)
-        val swipeRepo = SwipeRepositoryImpl(applicationContext)
         val chatRepo = ChatRepositoryImpl(applicationContext)
+        val filterPreferences = FilterPreferences(applicationContext)
         
         val locationPrefs = applicationContext.getSharedPreferences("location_prefs", MODE_PRIVATE)
 
@@ -132,10 +130,23 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val swipeViewModel = remember(user?.id) {
+                val swipeRepo = remember(user?.id) {
                     user?.let {
-                        android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${it.id}")
-                        SwipeViewModel(swipeRepo, it.id)
+                        SwipeRepositoryImpl(applicationContext, it.id)
+                    }
+                }
+
+                val swipeViewModel = remember(user?.id, swipeRepo) {
+                    if (user != null && swipeRepo != null) {
+                        android.util.Log.d("MainActivity", "Creating SwipeViewModel for user ${user!!.id}")
+                        SwipeViewModel(
+                            swipeRepository = swipeRepo,
+                            filterPreferences = filterPreferences,
+                            locationManager = locationManager,
+                            currentUserId = user!!.id
+                        )
+                    } else {
+                        null
                     }
                 }
 
@@ -180,10 +191,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    showMatchesListScreen && user != null -> {
+                    showMatchesListScreen && user != null && swipeRepo != null -> {
                         MatchesListScreen(
                             currentUser = user!!,
-                            swipeRepositoryImpl = swipeRepo,
+                            swipeRepositoryImpl = swipeRepo!!,
                             onBack = {
                                 showMatchesListScreen = false
                             },
@@ -213,6 +224,7 @@ class MainActivity : ComponentActivity() {
                         ProfileScreen(
                             user = user!!,
                             profileViewModel = profileViewModel,
+                            swipeViewModel = swipeViewModel,
                             onBackClick = {
                                 showProfile = false
                             },
@@ -232,7 +244,6 @@ class MainActivity : ComponentActivity() {
                     user != null && swipeViewModel != null -> {
                         HomeScreen(
                             swipeViewModel = swipeViewModel,
-
                             onMessagesClick = {
                                 showMatchesListScreen = true
                             },

@@ -38,5 +38,28 @@ interface UserDao {
     
     @Query("DELETE FROM users")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT * FROM users 
+        WHERE id != :currentUserId 
+        AND age BETWEEN :minAge AND :maxAge
+        AND id NOT IN (SELECT targetUserId FROM swipes WHERE userId = :currentUserId)
+    """)
+    suspend fun getUsersForSwipeFiltered(
+        currentUserId: Int,
+        minAge: Int,
+        maxAge: Int
+    ): List<UserEntity>
+    
+    @Query("""
+        SELECT * FROM users 
+        WHERE id != :currentUserId 
+        AND age BETWEEN :minAge AND :maxAge
+    """)
+    suspend fun getUsersForSwipeWithoutSwipeFilter(
+        currentUserId: Int,
+        minAge: Int,
+        maxAge: Int
+    ): List<UserEntity>
 }
 
