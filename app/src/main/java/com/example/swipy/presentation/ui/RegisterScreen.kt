@@ -541,21 +541,34 @@ fun RegisterScreen(
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = {
-                        authViewModel.register(
-                            RegisterData(
-                                email = email,
-                                password = password,
-                                firstname = firstname,
-                                lastname = lastname,
-                                confirm = confirm,
-                                age = age.toIntOrNull() ?: 18,
-                                gender = gender,
-                                bio = bio,
-                                city = city,
-                                country = country,
-                                photos = if (photoUri != null) listOf(photoUri.toString()) else emptyList()
+                        scope.launch {
+                            val locationResult = locationManager.validateLocation(city, country)
+                            
+                            val (lat, lon) = if (locationResult.isSuccess) {
+                                val locationData = locationResult.getOrNull()!!
+                                locationData.latitude to locationData.longitude
+                            } else {
+                                0.0 to 0.0
+                            }
+                            
+                            authViewModel.register(
+                                RegisterData(
+                                    email = email,
+                                    password = password,
+                                    firstname = firstname,
+                                    lastname = lastname,
+                                    confirm = confirm,
+                                    age = age.toIntOrNull() ?: 18,
+                                    gender = gender,
+                                    bio = bio,
+                                    city = city,
+                                    country = country,
+                                    latitude = lat,
+                                    longitude = lon,
+                                    photos = if (photoUri != null) listOf(photoUri.toString()) else emptyList()
+                                )
                             )
-                        )
+                        }
                     },
                     enabled = !state.isLoading,
                     modifier = Modifier.fillMaxWidth()

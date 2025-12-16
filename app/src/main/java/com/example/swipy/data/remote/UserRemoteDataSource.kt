@@ -59,7 +59,10 @@ class UserRemoteDataSource {
         gender: String,
         bio: String,
         city: String,
-        country: String
+        country: String,
+        latitude: Double,
+        longitude: Double,
+        photos: String? = null
     ): Result<UserDto> = withContext(Dispatchers.IO) {
         try {
 
@@ -85,11 +88,11 @@ class UserRemoteDataSource {
                 bio = bio,
                 city = city,
                 country = country,
-                latitude = 0.0,
-                longitude = 0.0,
+                latitude = latitude,
+                longitude = longitude,
                 maxDistance = 50,
                 preferredGender = "all",
-                photos = null
+                photos = photos
             )
             
             val response = apiService.createUser(newUser)
@@ -112,7 +115,13 @@ class UserRemoteDataSource {
         age: Int,
         bio: String,
         city: String,
-        country: String
+        country: String,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        maxDistance: Int? = null,
+        gender: String? = null,
+        preferredGender: String? = null,
+        photos: String? = null
     ): Result<UserDto> = withContext(Dispatchers.IO) {
         try {
             val currentUserResponse = apiService.getUserById(userId)
@@ -129,7 +138,13 @@ class UserRemoteDataSource {
                 age = age,
                 bio = bio,
                 city = city,
-                country = country
+                country = country,
+                latitude = latitude ?: currentUser.latitude,
+                longitude = longitude ?: currentUser.longitude,
+                maxDistance = maxDistance ?: currentUser.maxDistance,
+                gender = gender ?: currentUser.gender,
+                preferredGender = preferredGender ?: currentUser.preferredGender,
+                photos = photos ?: currentUser.photos
             )
             
             val response = apiService.updateUser(userId, updatedUser)

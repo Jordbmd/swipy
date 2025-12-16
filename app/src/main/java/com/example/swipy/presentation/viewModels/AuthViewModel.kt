@@ -70,6 +70,8 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
                 bio = data.bio.ifBlank { null },
                 city = data.city.ifBlank { null },
                 country = data.country.ifBlank { null },
+                latitude = data.latitude,
+                longitude = data.longitude,
                 photos = data.photos
             )
 

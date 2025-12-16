@@ -97,6 +97,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
         bio: String?,
         city: String?,
         country: String?,
+        latitude: Double,
+        longitude: Double,
         photos: List<String>
     ): Result<User> = withContext(Dispatchers.IO) {
         try {
@@ -116,7 +118,10 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                     gender = gender,
                     bio = bio ?: "",
                     city = city ?: "",
-                    country = country ?: ""
+                    country = country ?: "",
+                    latitude = latitude,
+                    longitude = longitude,
+                    photos = if (photos.isNotEmpty()) photos.joinToString(",") else null
                 )
 
                 apiResult.onSuccess { userResponse ->
@@ -131,8 +136,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                         bio = userResponse.bio ?: "",
                         city = userResponse.city ?: "",
                         country = userResponse.country ?: "",
-                        latitude = userResponse.latitude ?: 0.0,
-                        longitude = userResponse.longitude ?: 0.0,
+                        latitude = latitude,
+                        longitude = longitude,
                         maxDistance = userResponse.maxDistance ?: 50,
                         preferredGender = userResponse.preferredGender ?: "all",
                         photos = photos
@@ -161,8 +166,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                 bio = bio ?: "",
                 city = city ?: "",
                 country = country ?: "",
-                latitude = 0.0,
-                longitude = 0.0,
+                latitude = latitude,
+                longitude = longitude,
                 maxDistance = 50,
                 preferredGender = "all",
                 photos = photos
@@ -262,7 +267,13 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                 age = age,
                 bio = bio ?: "",
                 city = city ?: "",
-                country = country ?: ""
+                country = country ?: "",
+                latitude = latitude,
+                longitude = longitude,
+                maxDistance = maxDistance,
+                gender = currentUser.gender,
+                preferredGender = currentUser.preferredGender,
+                photos = if (photos.isNotEmpty()) photos.joinToString(",") else null
             )
             
             result.onSuccess {
@@ -294,6 +305,23 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                     longitude = longitude
                 )
                 userDao.update(updatedUser)
+                
+                try {
+                    userRemoteDataSource.updateUser(
+                        userId = userId.toString(),
+                        firstname = user.firstname,
+                        lastname = user.lastname,
+                        age = user.age,
+                        bio = user.bio,
+                        city = city,
+                        country = country,
+                        latitude = latitude,
+                        longitude = longitude
+                    )
+                } catch (e: Exception) {
+                    prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, true) }
+                }
+                
                 updatedUser.toUser()
             } else {
                 null

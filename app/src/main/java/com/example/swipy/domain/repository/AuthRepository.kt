@@ -15,6 +15,8 @@ interface AuthRepository {
         bio: String?,
         city: String?,
         country: String?,
+        latitude: Double,
+        longitude: Double,
         photos: List<String>
     ): Result<User>
 

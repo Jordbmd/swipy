@@ -5,7 +5,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +39,9 @@ fun SwipeCard(
     val animatableOffsetX = remember { Animatable(0f) }
     val animatableOffsetY = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    
+    var currentPhotoIndex by remember { mutableIntStateOf(0) }
+    val photoCount = user.photos.size
 
     val swipeThreshold = 300f
     val rotation = (offsetX / 20f).coerceIn(-20f, 20f)
@@ -99,10 +105,40 @@ fun SwipeCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            if (currentPhotoIndex > 0) {
+                                currentPhotoIndex--
+                            }
+                        }
+                )
+                
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            if (currentPhotoIndex < photoCount - 1) {
+                                currentPhotoIndex++
+                            }
+                        }
+                )
+            }
+            
             if (user.photos.isNotEmpty()) {
                 Image(
-                    painter = rememberAsyncImagePainter(user.photos.first()),
-                    contentDescription = "Photo de ${user.firstname}",
+                    painter = rememberAsyncImagePainter(user.photos.getOrNull(currentPhotoIndex) ?: user.photos.first()),
+                    contentDescription = "Photo ${currentPhotoIndex + 1} de ${user.firstname}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -118,6 +154,31 @@ fun SwipeCard(
                         color = Color.Gray,
                         fontSize = 20.sp
                     )
+                }
+            }
+
+            if (photoCount > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                        .align(Alignment.TopCenter),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    repeat(photoCount) { index ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(
+                                    if (index == currentPhotoIndex) 
+                                        Color.White 
+                                    else 
+                                        Color.White.copy(alpha = 0.4f)
+                                )
+                        )
+                    }
                 }
             }
 
