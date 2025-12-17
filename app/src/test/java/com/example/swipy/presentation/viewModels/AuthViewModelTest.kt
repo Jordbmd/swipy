@@ -49,7 +49,15 @@ class AuthViewModelTest {
             firstname = "John",
             lastname = "Doe",
             age = 30,
-            gender = "male"
+            gender = "male",
+            bio = null,
+            city = null,
+            country = null,
+            latitude = null,
+            longitude = null,
+            maxDistance = 50,
+            preferredGender = null,
+            photos = emptyList()
         )
 
         coEvery { repository.login(any(), any()) } returns Result.success(user)
@@ -128,11 +136,19 @@ class AuthViewModelTest {
             firstname = "Jane",
             lastname = "Doe",
             age = 25,
-            gender = "female"
+            gender = "female",
+            bio = null,
+            city = null,
+            country = null,
+            latitude = null,
+            longitude = null,
+            maxDistance = 50,
+            preferredGender = null,
+            photos = emptyList()
         )
 
         coEvery { 
-            repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) 
+            repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
         } returns Result.success(user)
 
         viewModel.register(registerData)
@@ -161,7 +177,7 @@ class AuthViewModelTest {
         assertEquals("Email invalide", state.error)
         assertNull(state.loggedInUser)
 
-        coVerify(exactly = 0) { repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -181,7 +197,7 @@ class AuthViewModelTest {
         assertEquals("Les mots de passe ne correspondent pas", state.error)
         assertNull(state.loggedInUser)
 
-        coVerify(exactly = 0) { repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -195,7 +211,7 @@ class AuthViewModelTest {
         )
 
         coEvery { 
-            repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) 
+            repository.register(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
         } returns Result.failure(Exception("Email déjà utilisé"))
 
         viewModel.register(registerData)

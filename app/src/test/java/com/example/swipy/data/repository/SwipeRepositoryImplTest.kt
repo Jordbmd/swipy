@@ -1,6 +1,7 @@
 package com.example.swipy.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.example.swipy.data.local.dao.SwipeDao
 import com.example.swipy.data.local.dao.UserDao
 import com.example.swipy.data.local.datasource.AppDatabase
@@ -9,6 +10,7 @@ import com.example.swipy.data.local.entity.UserEntity
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
@@ -23,16 +25,33 @@ class SwipeRepositoryImplTest {
     @Before
     fun setup() {
         context = mockk(relaxed = true)
-        swipeDao = mockk()
-        userDao = mockk()
+        swipeDao = mockk(relaxed = true)
+        userDao = mockk(relaxed = true)
 
-        mockkStatic("androidx.room.Room")
+        every { context.applicationContext } returns context
+
+        // Mock Log pour éviter les erreurs android.util.Log not mocked
+        mockkStatic(Log::class)
+        every { Log.d(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.i(any(), any()) } returns 0
+        every { Log.v(any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+
+        mockkStatic(androidx.room.Room::class)
         val database = mockk<AppDatabase>(relaxed = true)
         every { database.swipeDao() } returns swipeDao
         every { database.userDao() } returns userDao
-        every { androidx.room.Room.databaseBuilder(any(), any<Class<AppDatabase>>(), any()) } returns mockk {
-            every { build() } returns database
-        }
+        
+        val databaseBuilder = mockk<androidx.room.RoomDatabase.Builder<AppDatabase>>(relaxed = true)
+        every { databaseBuilder.build() } returns database
+        every { androidx.room.Room.databaseBuilder(any(), AppDatabase::class.java, any()) } returns databaseBuilder
+    }
+
+    @After
+    fun tearDown() {
+        unmockkAll()
     }
 
     @Test
@@ -44,7 +63,7 @@ class SwipeRepositoryImplTest {
         coEvery { swipeDao.getLikeSwipe(likedUserId, userId) } returns null
         coEvery { swipeDao.markAsSynced(any(), any()) } just Runs
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val isMatch = repository.likeUser(userId, likedUserId)
 
         assertFalse(isMatch)
@@ -70,7 +89,7 @@ class SwipeRepositoryImplTest {
         coEvery { swipeDao.getLikeSwipe(likedUserId, userId) } returns reverseSwipe
         coEvery { swipeDao.markAsSynced(any(), any()) } just Runs
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val isMatch = repository.likeUser(userId, likedUserId)
 
         assertTrue(isMatch)
@@ -87,7 +106,7 @@ class SwipeRepositoryImplTest {
         coEvery { swipeDao.insert(any()) } just Runs
         coEvery { swipeDao.markAsSynced(any(), any()) } just Runs
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         repository.dislikeUser(userId, dislikedUserId)
 
         coVerify { swipeDao.insert(match { it.userId == userId && it.targetUserId == dislikedUserId && it.action == "dislike" }) }
@@ -103,7 +122,7 @@ class SwipeRepositoryImplTest {
 
         coEvery { swipeDao.getSwipesByUser(userId) } returns swipeEntities
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val swipes = repository.getUserSwipes(userId)
 
         assertEquals(2, swipes.size)
@@ -132,7 +151,7 @@ class SwipeRepositoryImplTest {
         coEvery { userDao.getUserById(2) } returns user2
         coEvery { userDao.getUserById(3) } returns user3
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val matches = repository.getMatches(userId)
 
         assertEquals(1, matches.size)
@@ -153,7 +172,7 @@ class SwipeRepositoryImplTest {
 
         coEvery { swipeDao.getSwipeByUserAndTarget(userId, targetUserId) } returns swipe
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val hasSwipped = repository.hasSwipedUser(userId, targetUserId)
 
         assertTrue(hasSwipped)
@@ -168,7 +187,7 @@ class SwipeRepositoryImplTest {
 
         coEvery { swipeDao.getSwipeByUserAndTarget(userId, targetUserId) } returns null
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val hasSwiped = repository.hasSwipedUser(userId, targetUserId)
 
         assertFalse(hasSwiped)
@@ -192,7 +211,7 @@ class SwipeRepositoryImplTest {
         coEvery { userDao.getAllUsers() } returns allUsers
         coEvery { swipeDao.getSwipesByUser(userId) } returns userSwipes
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, userId)
         val potentialMatches = repository.getPotentialMatches(userId)
 
         assertEquals(2, potentialMatches.size)
@@ -214,7 +233,7 @@ class SwipeRepositoryImplTest {
         coEvery { swipeDao.getUnsyncedSwipes() } returns unsyncedSwipes
         coEvery { swipeDao.markAsSynced(any(), any()) } just Runs
 
-        val repository = SwipeRepositoryImpl(context)
+        val repository = SwipeRepositoryImpl(context, 1)
         repository.syncPendingSwipes()
 
         coVerify { swipeDao.getUnsyncedSwipes() }
