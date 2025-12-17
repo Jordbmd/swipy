@@ -10,7 +10,6 @@ import com.example.swipy.data.mapper.toEntity
 import com.example.swipy.data.mapper.toUser
 import com.example.swipy.data.remote.UserRemoteDataSource
 import com.example.swipy.domain.models.User
-import com.example.swipy.data.repository.SwipeRepositoryImpl
 import com.example.swipy.domain.repository.AuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -150,6 +149,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                         putBoolean(KEY_IS_OFFLINE_MODE, false)
                     }
 
+                    syncUsersFromApi()
+
                     return@withContext Result.success(userEntity.toUser())
                 }
             } catch (_: Exception) {
@@ -220,14 +221,14 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
 
         val entity =
             userDao.getUserById(userId)
-         ?: return null
+                ?: return null
 
         entity.toUser()
     } catch (_: Exception) {
         null
     }
-    
-   
+
+
     override suspend fun updateUser(
         userId: Int,
         firstname: String,
@@ -243,7 +244,7 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
     ): User = withContext(Dispatchers.IO) {
         val currentUser = userDao.getUserById(userId)
             ?: throw Exception("Utilisateur non trouvé")
-        
+
         val updatedUser = currentUser.copy(
             firstname = firstname,
             lastname = lastname,
@@ -256,9 +257,9 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
             maxDistance = maxDistance,
             photos = photos
         )
-        
+
         userDao.update(updatedUser)
-        
+
         try {
             val result = userRemoteDataSource.updateUser(
                 userId = userId.toString(),
@@ -277,7 +278,7 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                 preferredGender = currentUser.preferredGender,
                 photos = if (photos.isNotEmpty()) photos.joinToString(",") else null
             )
-            
+
             result.onSuccess {
                 prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, false) }
             }.onFailure {
@@ -286,10 +287,10 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
         } catch (e: Exception) {
             prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, true) }
         }
-        
+
         updatedUser.toUser()
     }
-    
+
     override suspend fun updateUserLocation(
         userId: Int,
         city: String,
@@ -307,7 +308,7 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                     longitude = longitude
                 )
                 userDao.update(updatedUser)
-                
+
                 try {
                     userRemoteDataSource.updateUser(
                         userId = userId.toString(),
@@ -329,7 +330,7 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                 } catch (e: Exception) {
                     prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, true) }
                 }
-                
+
                 updatedUser.toUser()
             } else {
                 null
