@@ -13,6 +13,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -49,16 +50,30 @@ class LocationManager(private val context: Context) {
         }
         
         return try {
-            val location = fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                CancellationTokenSource().token
-            ).await()
+            val lastLocation = try {
+                fusedLocationClient.lastLocation.await()
+            } catch (e: Exception) {
+                null
+            }
+            
+            val location = if (lastLocation != null) {
+                lastLocation
+            } else {
+                withTimeoutOrNull(5000L) {
+                    fusedLocationClient.getCurrentLocation(
+                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        CancellationTokenSource().token
+                    ).await()
+                }
+            }
             
             if (location == null) {
                 return Result.failure(Exception("Unable to get location"))
             }
             
-            val address = getAddressFromLocation(location.latitude, location.longitude)
+            val address = withTimeoutOrNull(3000L) {
+                getAddressFromLocation(location.latitude, location.longitude)
+            }
             
             Result.success(LocationData(
                 latitude = location.latitude,
