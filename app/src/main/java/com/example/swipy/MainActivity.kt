@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.example.swipy.presentation.ui.HomeScreen
 import com.example.swipy.presentation.ui.MatchScreen
@@ -64,10 +68,20 @@ class MainActivity : ComponentActivity() {
             val darkTheme = if (useSystemTheme) systemInDarkTheme else isDarkMode
 
             SwipyTheme(darkTheme = darkTheme) {
+                var isCheckingSession by remember { mutableStateOf(true) }
                 var showLanding by remember { mutableStateOf(true) }
                 var showRegister by remember { mutableStateOf(false) }
                 var showProfile by remember { mutableStateOf(false) }
                 var user by remember { mutableStateOf<User?>(null) }
+                
+                LaunchedEffect(Unit) {
+                    val savedUser = authRepo.currentUserOrNull()
+                    if (savedUser != null) {
+                        user = savedUser
+                        showLanding = false
+                    }
+                    isCheckingSession = false
+                }
                 var showMatchScreen by remember { mutableStateOf(false) }
                 var showMessagesScreen by remember { mutableStateOf(false) }
                 var showMatchesListScreen by remember { mutableStateOf(false) }
@@ -178,6 +192,15 @@ class MainActivity : ComponentActivity() {
                 }
 
                 when {
+                    isCheckingSession -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    
                     showMessagesScreen && user != null && matchedUser != null -> {
                         MessagesScreen(
                             matchedUser = matchedUser!!,
