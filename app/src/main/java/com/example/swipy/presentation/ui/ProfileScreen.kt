@@ -69,15 +69,18 @@ fun ProfileScreen(
     val currentMinAge by swipeViewModel?.minAge?.collectAsState() ?: remember { mutableStateOf(18) }
     val currentMaxAge by swipeViewModel?.maxAge?.collectAsState() ?: remember { mutableStateOf(99) }
     val currentMaxDistance by swipeViewModel?.maxDistance?.collectAsState() ?: remember { mutableStateOf(10000f) }
+    val currentPreferredGender by swipeViewModel?.preferredGender?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
     
     var minAge by remember { mutableStateOf(currentMinAge) }
     var maxAge by remember { mutableStateOf(currentMaxAge) }
+    var preferredGender by remember { mutableStateOf(currentPreferredGender) }
     var photos by remember { mutableStateOf(user.photos.toList()) }
     
-    LaunchedEffect(currentMinAge, currentMaxAge, currentMaxDistance) {
+    LaunchedEffect(currentMinAge, currentMaxAge, currentMaxDistance, currentPreferredGender) {
         minAge = currentMinAge
         maxAge = currentMaxAge
         maxDistance = currentMaxDistance.toInt().toString()
+        preferredGender = currentPreferredGender
     }
     
     var showLocationDialog by remember { mutableStateOf(false) }
@@ -205,7 +208,8 @@ fun ProfileScreen(
                                 swipeViewModel?.updateFilters(
                                     minAge = minAge,
                                     maxAge = maxAge,
-                                    maxDistance = maxDistInt.toFloat()
+                                    maxDistance = maxDistInt.toFloat(),
+                                    preferredGender = preferredGender
                                 )
                                 
                                 isEditing = false
@@ -528,6 +532,41 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         Text(
+                            "Genre recherché",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        val genderOptions = listOf(
+                            null to "Tous",
+                            "male" to "Homme",
+                            "female" to "Femme",
+                            "other" to "Autre"
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            genderOptions.forEach { (value, label) ->
+                                val isSelected = preferredGender == value
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { preferredGender = value },
+                                    label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
                             "Distance maximale",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -542,11 +581,11 @@ fun ProfileScreen(
                         )
                     } else {
                         ProfileInfoRow(label = "Âge recherché", value = "$minAge - $maxAge ans")
-                        ProfileInfoRow(label = "Distance maximale", value = "$maxDistance km")
                         ProfileInfoRow(
-                            label = "Recherche", 
-                            value = user.preferredGender?.capitalize() ?: "Tous"
+                            label = "Genre recherché", 
+                            value = preferredGender?.capitalize() ?: "Tous"
                         )
+                        ProfileInfoRow(label = "Distance maximale", value = "$maxDistance km")
                     }
                 }
                 

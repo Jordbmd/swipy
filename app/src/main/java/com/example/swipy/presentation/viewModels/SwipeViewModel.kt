@@ -34,10 +34,12 @@ class SwipeViewModel(
     private val _minAge = MutableStateFlow(18)
     private val _maxAge = MutableStateFlow(99)
     private val _maxDistance = MutableStateFlow(10000f)
+    private val _preferredGender = MutableStateFlow<String?>(null)
     
     val minAge: StateFlow<Int> = _minAge.asStateFlow()
     val maxAge: StateFlow<Int> = _maxAge.asStateFlow()
     val maxDistance: StateFlow<Float> = _maxDistance.asStateFlow()
+    val preferredGender: StateFlow<String?> = _preferredGender.asStateFlow()
     
     init {
         viewModelScope.launch {
@@ -48,6 +50,9 @@ class SwipeViewModel(
         }
         viewModelScope.launch {
             filterPreferences.maxDistance.collect { _maxDistance.value = it }
+        }
+        viewModelScope.launch {
+            filterPreferences.preferredGender.collect { _preferredGender.value = it }
         }
         loadProfiles()
     }
@@ -140,14 +145,16 @@ class SwipeViewModel(
         }
     }
     
-    fun updateFilters(minAge: Int, maxAge: Int, maxDistance: Float) {
+    fun updateFilters(minAge: Int, maxAge: Int, maxDistance: Float, preferredGender: String? = null) {
         viewModelScope.launch {
             filterPreferences.updateMinAge(minAge)
             filterPreferences.updateMaxAge(maxAge)
             filterPreferences.updateMaxDistance(maxDistance)
+            filterPreferences.updatePreferredGender(preferredGender)
             _minAge.value = minAge
             _maxAge.value = maxAge
             _maxDistance.value = maxDistance
+            _preferredGender.value = preferredGender
             loadProfiles()
         }
     }
