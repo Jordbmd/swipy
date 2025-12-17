@@ -1,22 +1,64 @@
 package com.example.swipy.presentation.ui
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -26,9 +68,11 @@ import com.example.swipy.domain.models.User
 import com.example.swipy.domain.utils.LocationManager
 import com.example.swipy.presentation.viewModels.AuthViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -59,33 +103,37 @@ fun RegisterScreen(
     var city by remember { mutableStateOf("") }
     var country by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var photos by remember { mutableStateOf<List<String>>(emptyList()) }
     var validationError by remember { mutableStateOf<String?>(null) }
     var isLoadingLocation by remember { mutableStateOf(false) }
     var requestLocationAfterPermission by remember { mutableStateOf(false) }
-    var locationSuggestions by remember { mutableStateOf<List<com.example.swipy.domain.utils.LocationData>>(emptyList()) }
+    var locationSuggestions by remember {
+        mutableStateOf<List<com.example.swipy.domain.utils.LocationData>>(
+            emptyList()
+        )
+    }
     var showSuggestions by remember { mutableStateOf(false) }
-    
+
     val locationManager = remember { LocationManager(context) }
-    
+
     val locationPermissions = rememberMultiplePermissionsState(
         permissions = listOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             android.Manifest.permission.ACCESS_COARSE_LOCATION
         )
     )
-    
+
     LaunchedEffect(locationPermissions.permissions.map { it.status.isGranted }) {
         if (requestLocationAfterPermission && locationPermissions.permissions.any { it.status.isGranted }) {
             requestLocationAfterPermission = false
             isLoadingLocation = true
-            
+
             val result = locationManager.getCurrentLocation()
             result.onSuccess { locationData ->
                 city = locationData.city
                 country = locationData.country
             }
-            
+
             isLoadingLocation = false
         }
     }
@@ -103,6 +151,7 @@ fun RegisterScreen(
                     else -> null
                 }
             }
+
             1 -> {
                 when {
                     city.isBlank() -> "La ville est requise"
@@ -112,6 +161,7 @@ fun RegisterScreen(
                     else -> null
                 }
             }
+
             2 -> {
                 when {
                     email.isBlank() -> "L'email est requis"
@@ -123,20 +173,43 @@ fun RegisterScreen(
                     else -> null
                 }
             }
+
             3 -> {
                 when {
                     bio.isBlank() -> "La bio est requise"
                     else -> null
                 }
             }
+
             else -> null
         }
     }
 
+    fun copyImageToInternalStorage(uri: Uri): String? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val fileName = "photo_${System.currentTimeMillis()}.jpg"
+            val file = File(context.filesDir, fileName)
+            val outputStream = FileOutputStream(file)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            file.absolutePath
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     val photoPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri -> photoUri = uri }
-    )
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            val savedPath = copyImageToInternalStorage(it)
+            if (savedPath != null && photos.size < 6) {
+                photos = (photos + savedPath).toMutableList()
+            }
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -163,7 +236,7 @@ fun RegisterScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.height(16.dp))
-                    
+
                     OutlinedTextField(
                         value = firstname,
                         onValueChange = { firstname = it },
@@ -177,7 +250,7 @@ fun RegisterScreen(
                         )
                     )
                     Spacer(Modifier.height(12.dp))
-                    
+
                     OutlinedTextField(
                         value = lastname,
                         onValueChange = { lastname = it },
@@ -191,7 +264,7 @@ fun RegisterScreen(
                         )
                     )
                     Spacer(Modifier.height(12.dp))
-                    
+
                     OutlinedTextField(
                         value = age,
                         onValueChange = { age = it.filter { c -> c.isDigit() } },
@@ -205,7 +278,7 @@ fun RegisterScreen(
                         )
                     )
                     Spacer(Modifier.height(12.dp))
-                    
+
                     Box {
                         OutlinedTextField(
                             value = gender,
@@ -215,7 +288,9 @@ fun RegisterScreen(
                             readOnly = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.3f
+                                ),
                                 focusedLabelColor = MaterialTheme.colorScheme.primary,
                                 disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                                 disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -250,89 +325,175 @@ fun RegisterScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.height(16.dp))
-                
-                Button(
-                    onClick = {
-                        if (locationPermissions.permissions.any { it.status.isGranted }) {
-                            scope.launch {
-                                isLoadingLocation = true
-                                val result = locationManager.getCurrentLocation()
-                                result.onSuccess { locationData ->
-                                    city = locationData.city
-                                    country = locationData.country
+
+                    Button(
+                        onClick = {
+                            if (locationPermissions.permissions.any { it.status.isGranted }) {
+                                scope.launch {
+                                    isLoadingLocation = true
+                                    val result = locationManager.getCurrentLocation()
+                                    result.onSuccess { locationData ->
+                                        city = locationData.city
+                                        country = locationData.country
+                                    }
+                                    isLoadingLocation = false
                                 }
-                                isLoadingLocation = false
+                            } else {
+                                requestLocationAfterPermission = true
+                                locationPermissions.launchMultiplePermissionRequest()
                             }
-                        } else {
-                            requestLocationAfterPermission = true
-                            locationPermissions.launchMultiplePermissionRequest()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    enabled = !isLoadingLocation
-                ) {
-                    Icon(Icons.Default.MyLocation, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    if (isLoadingLocation) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        enabled = !isLoadingLocation
+                    ) {
+                        Icon(Icons.Default.MyLocation, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Récupération...")
-                    } else {
-                        Text("Utiliser ma position GPS")
+                        if (isLoadingLocation) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Récupération...")
+                        } else {
+                            Text("Utiliser ma position GPS")
+                        }
                     }
-                }
-                
-                Spacer(Modifier.height(12.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
-                    Text(
-                        text = "OU",
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
-                }
-                
-                Spacer(Modifier.height(12.dp))
-                
-                Column {
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
+                        Text(
+                            text = "OU",
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Column {
+                        OutlinedTextField(
+                            value = city,
+                            onValueChange = { newValue ->
+                                city = newValue
+                                if (newValue.length >= 2) {
+                                    showSuggestions = true
+                                    scope.launch {
+                                        val query =
+                                            if (country.isNotEmpty()) "$newValue, $country" else newValue
+                                        val result = locationManager.searchLocation(query)
+                                        result.onSuccess { suggestions ->
+                                            locationSuggestions = suggestions
+                                        }
+                                    }
+                                } else {
+                                    showSuggestions = false
+                                    locationSuggestions = emptyList()
+                                }
+                            },
+                            label = { Text("Ville") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.3f
+                                ),
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                cursorColor = MaterialTheme.colorScheme.primary
+                            ),
+                            trailingIcon = {
+                                if (city.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        city = ""
+                                        showSuggestions = false
+                                        locationSuggestions = emptyList()
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Effacer")
+                                    }
+                                }
+                            }
+                        )
+
+                        if (showSuggestions && locationSuggestions.isNotEmpty()) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column {
+                                    locationSuggestions.take(5).forEach { suggestion ->
+                                        TextButton(
+                                            onClick = {
+                                                city = suggestion.city
+                                                country = suggestion.country
+                                                showSuggestions = false
+                                                locationSuggestions = emptyList()
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Start,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Place,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("${suggestion.city}, ${suggestion.country}")
+                                            }
+                                        }
+                                        if (suggestion != locationSuggestions.take(5).last()) {
+                                            HorizontalDivider(
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.1f
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
                     OutlinedTextField(
-                        value = city, 
+                        value = country,
                         onValueChange = { newValue ->
-                            city = newValue
-                            if (newValue.length >= 2) {
+                            country = newValue
+                            if (newValue.length >= 2 && city.isNotEmpty()) {
                                 showSuggestions = true
                                 scope.launch {
-                                    val query = if (country.isNotEmpty()) "$newValue, $country" else newValue
+                                    val query = "$city, $newValue"
                                     val result = locationManager.searchLocation(query)
                                     result.onSuccess { suggestions ->
                                         locationSuggestions = suggestions
                                     }
                                 }
-                            } else {
-                                showSuggestions = false
-                                locationSuggestions = emptyList()
                             }
-                        }, 
-                        label = { Text("Ville") }, 
+                        },
+                        label = { Text("Pays") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -341,9 +502,9 @@ fun RegisterScreen(
                             cursorColor = MaterialTheme.colorScheme.primary
                         ),
                         trailingIcon = {
-                            if (city.isNotEmpty()) {
-                                IconButton(onClick = { 
-                                    city = ""
+                            if (country.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    country = ""
                                     showSuggestions = false
                                     locationSuggestions = emptyList()
                                 }) {
@@ -352,287 +513,271 @@ fun RegisterScreen(
                             }
                         }
                     )
-                    
-                    if (showSuggestions && locationSuggestions.isNotEmpty()) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column {
-                                locationSuggestions.take(5).forEach { suggestion ->
-                                    TextButton(
-                                        onClick = {
-                                            city = suggestion.city
-                                            country = suggestion.country
-                                            showSuggestions = false
-                                            locationSuggestions = emptyList()
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
+                }
+
+                2 -> {
+                    Text(
+                        text = "Identifiants de connexion",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Mot de passe") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = confirm,
+                        onValueChange = { confirm = it },
+                        label = { Text("Confirmer le mot de passe") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+
+                3 -> {
+                    Text(
+                        text = "Profil et photo",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { bio = it },
+                        label = { Text("Bio") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = "Photos de profil (optionnel, max 6)",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    Column {
+                        for (row in 0..1) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                for (col in 0..2) {
+                                    val index = row * 3 + col
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(1f)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.Start,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Place,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
+                                        if (index < photos.size) {
+                                            Image(
+                                                painter = rememberAsyncImagePainter(File(photos[index])),
+                                                contentDescription = "Photo ${index + 1}",
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clip(RoundedCornerShape(8.dp)),
+                                                contentScale = ContentScale.Crop
                                             )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text("${suggestion.city}, ${suggestion.country}")
+                                            IconButton(
+                                                onClick = {
+                                                    photos =
+                                                        photos.filterIndexed { i, _ -> i != index }
+                                                },
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .size(32.dp)
+                                                    .background(
+                                                        Color.Red.copy(alpha = 0.7f),
+                                                        CircleShape
+                                                    )
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Clear,
+                                                    contentDescription = "Supprimer",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        } else if (index == photos.size && photos.size < 6) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                                    .clickable {
+                                                        photoPicker.launch(
+                                                            PickVisualMediaRequest(
+                                                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                            )
+                                                        )
+                                                    }
+                                                    .border(
+                                                        width = 2.dp,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Add,
+                                                    contentDescription = "Ajouter",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(32.dp)
+                                                )
+                                            }
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                            alpha = 0.3f
+                                                        )
+                                                    )
+                                            )
                                         }
                                     }
-                                    if (suggestion != locationSuggestions.take(5).last()) {
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-                                    }
                                 }
                             }
+                            if (row < 1) Spacer(Modifier.height(8.dp))
                         }
                     }
-                }
-                
-                Spacer(Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = country, 
-                    onValueChange = { newValue ->
-                        country = newValue
-                        if (newValue.length >= 2 && city.isNotEmpty()) {
-                            showSuggestions = true
+
+                    Spacer(Modifier.height(20.dp))
+                    Button(
+                        onClick = {
                             scope.launch {
-                                val query = "$city, $newValue"
-                                val result = locationManager.searchLocation(query)
-                                result.onSuccess { suggestions ->
-                                    locationSuggestions = suggestions
+                                val locationResult = locationManager.validateLocation(city, country)
+
+                                val (lat, lon) = if (locationResult.isSuccess) {
+                                    val locationData = locationResult.getOrNull()!!
+                                    locationData.latitude to locationData.longitude
+                                } else {
+                                    0.0 to 0.0
                                 }
-                            }
-                        }
-                    }, 
-                    label = { Text("Pays") }, 
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    ),
-                    trailingIcon = {
-                        if (country.isNotEmpty()) {
-                            IconButton(onClick = { 
-                                country = ""
-                                showSuggestions = false
-                                locationSuggestions = emptyList()
-                            }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Effacer")
-                            }
-                        }
-                    }
-                )
-            }
 
-            2 -> {
-                Text(
-                    text = "Identifiants de connexion",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Mot de passe") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-                Spacer(Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = confirm,
-                    onValueChange = { confirm = it },
-                    label = { Text("Confirmer le mot de passe") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-            }
-
-            3 -> {
-                Text(
-                    text = "Profil et photo",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    value = bio,
-                    onValueChange = { bio = it },
-                    label = { Text("Bio") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-                Spacer(Modifier.height(16.dp))
-                
-                Text(
-                    text = "Photo de profil (optionnelle)",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(12.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (photoUri != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(photoUri),
-                            contentDescription = "Photo de profil",
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Text("Aucune photo sélectionnée", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = { photoPicker.launch("image/*") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Choisir une photo")
-                }
-
-                Spacer(Modifier.height(20.dp))
-                Button(
-                    onClick = {
-                        scope.launch {
-                            val locationResult = locationManager.validateLocation(city, country)
-                            
-                            val (lat, lon) = if (locationResult.isSuccess) {
-                                val locationData = locationResult.getOrNull()!!
-                                locationData.latitude to locationData.longitude
-                            } else {
-                                0.0 to 0.0
-                            }
-                            
-                            authViewModel.register(
-                                RegisterData(
-                                    email = email,
-                                    password = password,
-                                    firstname = firstname,
-                                    lastname = lastname,
-                                    confirm = confirm,
-                                    age = age.toIntOrNull() ?: 18,
-                                    gender = gender,
-                                    bio = bio,
-                                    city = city,
-                                    country = country,
-                                    latitude = lat,
-                                    longitude = lon,
-                                    photos = if (photoUri != null) listOf(photoUri.toString()) else emptyList()
+                                authViewModel.register(
+                                    RegisterData(
+                                        email = email,
+                                        password = password,
+                                        firstname = firstname,
+                                        lastname = lastname,
+                                        confirm = confirm,
+                                        age = age.toIntOrNull() ?: 18,
+                                        gender = gender,
+                                        bio = bio,
+                                        city = city,
+                                        country = country,
+                                        latitude = lat,
+                                        longitude = lon,
+                                        photos = photos
+                                    )
                                 )
-                            )
+                            }
+                        },
+                        enabled = !state.isLoading,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (state.isLoading) "…" else "Créer le compte")
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(
+                    onClick = {
+                        if (step > 0) {
+                            step--
+                            validationError = null
                         }
                     },
-                    enabled = !state.isLoading,
-                    modifier = Modifier.fillMaxWidth()
+                    enabled = step > 0
                 ) {
-                    Text(if (state.isLoading) "…" else "Créer le compte")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Précédent")
+                }
+
+                if (step < 3) {
+                    IconButton(onClick = {
+                        val error = validateCurrentStep()
+                        if (error != null) {
+                            validationError = error
+                        } else {
+                            validationError = null
+                            step++
+                        }
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Suivant")
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(24.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(
-                onClick = { 
-                    if (step > 0) {
-                        step--
-                        validationError = null
-                    }
-                },
-                enabled = step > 0
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Précédent")
+            validationError?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
-            if (step < 3) {
-                IconButton(onClick = { 
-                    val error = validateCurrentStep()
-                    if (error != null) {
-                        validationError = error
-                    } else {
-                        validationError = null
-                        step++
-                    }
-                }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Suivant")
-                }
+            Spacer(Modifier.height(12.dp))
+            TextButton(onClick = onGoLogin, enabled = !state.isLoading) {
+                Text(
+                    text = "J'ai déjà un compte",
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-        }
-
-        validationError?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = it, 
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onGoLogin, enabled = !state.isLoading) {
-            Text(
-                text = "J'ai déjà un compte",
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        state.error?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
+            state.error?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }

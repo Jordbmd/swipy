@@ -21,10 +21,13 @@ fun UserDto.toEntity(): UserEntity {
         longitude = this.longitude ?: 0.0,
         maxDistance = this.maxDistance ?: 50,
         preferredGender = this.preferredGender ?: "all",
-        photos = if (this.photos != null) listOf(this.photos) else emptyList()
+        photos = if (this.photos != null && this.photos.isNotEmpty()) {
+            this.photos.split(",").filter { it.isNotEmpty() }
+        } else {
+            emptyList()
+        }
     )
 }
-
 
 
 fun UserEntity.toUser(): User {
