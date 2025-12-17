@@ -37,7 +37,9 @@ import com.example.swipy.presentation.ui.ProfileScreen
 import android.Manifest
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
@@ -87,14 +89,45 @@ class MainActivity : ComponentActivity() {
                 var showMessagesScreen by remember { mutableStateOf(false) }
                 var showMatchesListScreen by remember { mutableStateOf(false) }
                 var matchedUser by remember { mutableStateOf<User?>(null) }
-                var isOfflineMode by remember { mutableStateOf(false) }
+                var isOfflineMode by remember { mutableStateOf(!isNetworkAvailable(applicationContext)) }
+                
+                DisposableEffect(Unit) {
+                    val connectivityManager = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                    
+                    val networkCallback = object : ConnectivityManager.NetworkCallback() {
+                        override fun onAvailable(network: Network) {
+                            isOfflineMode = false
+                        }
+                        
+                        override fun onLost(network: Network) {
+                            isOfflineMode = true
+                        }
+                        
+                        override fun onCapabilitiesChanged(
+                            network: Network,
+                            networkCapabilities: NetworkCapabilities
+                        ) {
+                            val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                            isOfflineMode = !hasInternet
+                        }
+                    }
+                    
+                    val networkRequest = NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build()
+                    
+                    connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
+                    
+                    onDispose {
+                        connectivityManager.unregisterNetworkCallback(networkCallback)
+                    }
+                }
                 
                 LaunchedEffect(Unit) {
                     val savedUser = authRepo.currentUserOrNull()
                     if (savedUser != null) {
                         user = savedUser
                         showLanding = false
-                        isOfflineMode = !isNetworkAvailable(applicationContext)
                     }
                     isCheckingSession = false
                 }
