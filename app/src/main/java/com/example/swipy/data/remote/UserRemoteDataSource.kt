@@ -110,6 +110,8 @@ class UserRemoteDataSource {
    
     suspend fun updateUser(
         userId: String,
+        email: String? = null,
+        password: String? = null,
         firstname: String,
         lastname: String,
         age: Int,
@@ -133,6 +135,8 @@ class UserRemoteDataSource {
             val currentUser = currentUserResponse.body()!!
             
             val updatedUser = currentUser.copy(
+                email = email ?: currentUser.email,
+                password = password ?: currentUser.password,
                 firstname = firstname,
                 lastname = lastname,
                 age = age,

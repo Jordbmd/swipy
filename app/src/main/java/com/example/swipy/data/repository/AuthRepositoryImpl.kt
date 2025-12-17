@@ -262,6 +262,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
         try {
             val result = userRemoteDataSource.updateUser(
                 userId = userId.toString(),
+                email = currentUser.email,
+                password = currentUser.password,
                 firstname = firstname,
                 lastname = lastname,
                 age = age,
@@ -309,6 +311,8 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                 try {
                     userRemoteDataSource.updateUser(
                         userId = userId.toString(),
+                        email = user.email,
+                        password = user.password,
                         firstname = user.firstname,
                         lastname = user.lastname,
                         age = user.age,
@@ -316,7 +320,11 @@ class AuthRepositoryImpl(context: Context) : AuthRepository {
                         city = city,
                         country = country,
                         latitude = latitude,
-                        longitude = longitude
+                        longitude = longitude,
+                        maxDistance = user.maxDistance,
+                        gender = user.gender,
+                        preferredGender = user.preferredGender,
+                        photos = user.photos?.joinToString(",")
                     )
                 } catch (e: Exception) {
                     prefs.edit { putBoolean(KEY_IS_OFFLINE_MODE, true) }
