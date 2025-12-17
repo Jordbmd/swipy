@@ -35,12 +35,22 @@ import com.example.swipy.domain.utils.LocationManager
 import kotlinx.coroutines.launch
 import com.example.swipy.presentation.ui.ProfileScreen
 import android.Manifest
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
+
+private fun isNetworkAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -73,20 +83,21 @@ class MainActivity : ComponentActivity() {
                 var showRegister by remember { mutableStateOf(false) }
                 var showProfile by remember { mutableStateOf(false) }
                 var user by remember { mutableStateOf<User?>(null) }
+                var showMatchScreen by remember { mutableStateOf(false) }
+                var showMessagesScreen by remember { mutableStateOf(false) }
+                var showMatchesListScreen by remember { mutableStateOf(false) }
+                var matchedUser by remember { mutableStateOf<User?>(null) }
+                var isOfflineMode by remember { mutableStateOf(false) }
                 
                 LaunchedEffect(Unit) {
                     val savedUser = authRepo.currentUserOrNull()
                     if (savedUser != null) {
                         user = savedUser
                         showLanding = false
+                        isOfflineMode = !isNetworkAvailable(applicationContext)
                     }
                     isCheckingSession = false
                 }
-                var showMatchScreen by remember { mutableStateOf(false) }
-                var showMessagesScreen by remember { mutableStateOf(false) }
-                var showMatchesListScreen by remember { mutableStateOf(false) }
-                var matchedUser by remember { mutableStateOf<User?>(null) }
-                var isOfflineMode by remember { mutableStateOf(false) }
                 var showLocationPermissionDialog by remember { mutableStateOf(false) }
                 val hasAskedForLocationPermission = remember { 
                     locationPrefs.getBoolean("has_asked_location_permission", false) 
