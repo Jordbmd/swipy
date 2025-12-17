@@ -142,8 +142,6 @@ class MainActivity : ComponentActivity() {
                 
                 LaunchedEffect(user) {
                     if (user != null) {
-                        isOfflineMode = authRepo.isOfflineMode()
-                    
                         val hasPermission = locationManager.hasLocationPermission()
                         
                         if (hasPermission) {
