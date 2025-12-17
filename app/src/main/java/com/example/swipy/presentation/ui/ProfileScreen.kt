@@ -1,6 +1,10 @@
 package com.example.swipy.presentation.ui
 
 import android.annotation.SuppressLint
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +39,8 @@ import com.example.swipy.data.local.datasource.ThemePreferences
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
+import java.io.File
+import java.io.FileOutputStream
 
 @SuppressLint("MutableCollectionMutableState")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -73,10 +80,36 @@ fun ProfileScreen(
         maxDistance = currentMaxDistance.toInt().toString()
     }
     
-    var showAddPhotoDialog by remember { mutableStateOf(false) }
-    var newPhotoUrl by remember { mutableStateOf("") }
     var showLocationDialog by remember { mutableStateOf(false) }
     var requestLocationAfterPermission by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    
+    fun copyImageToInternalStorage(uri: Uri): String? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val fileName = "photo_${System.currentTimeMillis()}.jpg"
+            val file = File(context.filesDir, fileName)
+            val outputStream = FileOutputStream(file)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            file.absolutePath
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            val savedPath = copyImageToInternalStorage(it)
+            if (savedPath != null && photos.size < 6) {
+                photos = (photos + savedPath).toMutableList()
+            }
+        }
+    }
     
     val locationPermissions = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -227,7 +260,9 @@ fun ProfileScreen(
                         photos = photos,
                         isEditing = isEditing,
                         onAddPhoto = { 
-                            showAddPhotoDialog = true
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
                         },
                         onRemovePhoto = { photoUrl ->
                             photos = photos.filter { it != photoUrl }.toMutableList()
@@ -609,50 +644,6 @@ fun ProfileScreen(
             }
         }
     }
-    
-    if (showAddPhotoDialog) {
-        AlertDialog(
-            onDismissRequest = { 
-                showAddPhotoDialog = false
-                newPhotoUrl = ""
-            },
-            title = { Text("Ajouter une photo") },
-            text = {
-                Column {
-                    Text("Entrez l'URL de la photo :")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = newPhotoUrl,
-                        onValueChange = { newPhotoUrl = it },
-                        label = { Text("URL") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (newPhotoUrl.isNotEmpty() && photos.size < 6) {
-                            photos = (photos + newPhotoUrl).toMutableList()
-                        }
-                        showAddPhotoDialog = false
-                        newPhotoUrl = ""
-                    }
-                ) {
-                    Text("Ajouter")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { 
-                    showAddPhotoDialog = false
-                    newPhotoUrl = ""
-                }) {
-                    Text("Annuler")
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -703,8 +694,15 @@ fun PhotoItem(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
+        // Support à la fois les URLs (http/https) et les chemins de fichiers locaux
+        val imageModel = if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+            photoUrl
+        } else {
+            File(photoUrl)
+        }
+        
         AsyncImage(
-            model = photoUrl,
+            model = imageModel,
             contentDescription = "Photo",
             modifier = Modifier
                 .fillMaxSize()
